@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Bus } from 'lucide-react'
+import { Bus, Eye, EyeOff } from 'lucide-react'
 export default function RegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -19,6 +19,8 @@ export default function RegisterPage() {
 
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -78,11 +80,13 @@ export default function RegisterPage() {
       <div className="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden">
         {/* Wordmark */}
         <div className="relative z-10 flex items-center gap-2.5">
+        <Link href="/">
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
             <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <Bus />
             </svg>
           </div>
+          </Link>
           <span className="text-white font-bold text-lg tracking-tight">
             Route<span className="text-blue-500">Sync</span> PH
           </span>
@@ -125,11 +129,15 @@ export default function RegisterPage() {
 
           {/* Mobile-only wordmark */}
           <div className="flex lg:hidden items-center gap-2 mb-8">
+          <Link href="/">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+             
               <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12h4l3-9 4 18 3-9h4" />
+                <Bus />
               </svg>
+      
             </div>
+              </Link>
             <span className="text-white font-bold text-base tracking-tight">
               Route<span className="text-blue-500">Sync</span> PH
             </span>
@@ -200,12 +208,64 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="password" className={labelClass}>Password</label>
-              <input id="password" name="password" type="password" placeholder="••••••••" value={formData.password} onChange={handleChange} required disabled={loading} className={inputClass} />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  className={`${inputClass} pr-11`}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  disabled={loading}
+                  className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-slate-500 hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 rounded-r-lg transition disabled:opacity-50"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" aria-hidden />
+                  ) : (
+                    <Eye className="w-4 h-4" aria-hidden />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className={labelClass}>Confirm Password</label>
-              <input id="confirmPassword" name="confirmPassword" type="password" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} required disabled={loading} className={inputClass} />
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  disabled={loading}
+                  className={`${inputClass} pr-11`}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  disabled={loading}
+                  className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-slate-500 hover:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 rounded-r-lg transition disabled:opacity-50"
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" aria-hidden />
+                  ) : (
+                    <Eye className="w-4 h-4" aria-hidden />
+                  )}
+                </button>
+              </div>
             </div>
 
             <button
