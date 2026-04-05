@@ -3,19 +3,20 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-
+import { Bus } from 'lucide-react'
 export default function RegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
+    name: '',
     companyName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    phone: '',
+    city: '',
+    region: '',
   })
+
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -40,9 +41,13 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: formData.name,
           companyName: formData.companyName,
           email: formData.email,
           password: formData.password,
+          phone: formData.phone,
+          city: formData.city,
+          region: formData.region,
         }),
       })
 
@@ -60,104 +65,182 @@ export default function RegisterPage() {
     }
   }
 
+  const inputClass =
+    'w-full h-11 px-3.5 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm font-light placeholder:text-slate-600 focus:outline-none focus:border-blue-600 focus:bg-blue-600/5 transition disabled:opacity-50'
+
+  const labelClass =
+    'block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5'
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-      <Card className="w-full max-w-md">
-        <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-center text-blue-600">TranSync PH</h1>
-            <p className="text-center text-slate-600 text-sm mt-2">Create Your Account</p>
+    <div className="min-h-screen grid lg:grid-cols-2">
+
+      {/* ── LEFT PANEL ── */}
+      <div className="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden">
+        {/* Wordmark */}
+        <div className="relative z-10 flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <Bus />
+            </svg>
+          </div>
+          <span className="text-white font-bold text-lg tracking-tight">
+            Route<span className="text-blue-500">Sync</span> PH
+          </span>
+        </div>
+
+        {/* Hero copy */}
+        <div className="relative z-10">
+          <span className="inline-block text-blue-500 text-xs font-mono font-medium tracking-widest uppercase bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded mb-6">
+            Operator Dashboard
+          </span>
+          <h1 className="text-4xl font-bold leading-tight tracking-tight text-slate-100 mb-5">
+            Manage your routes.<br />
+            <span className="text-blue-500">Move the Philippines.</span>
+          </h1>
+          <p className="text-sm font-light text-slate-500 leading-relaxed max-w-sm">
+            A unified dashboard for transport operators — schedule routes,
+            publish announcements, and give commuters real-time clarity.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="relative z-10 flex gap-8 border-t border-white/5 pt-6">
+          {[
+            { num: '120+', label: 'Routes tracked' },
+            { num: '17', label: 'Regions covered' },
+            { num: 'Live', label: 'Map updates' },
+          ].map(({ num, label }) => (
+            <div key={label}>
+              <div className="text-2xl font-bold text-slate-100 tracking-tight">{num}</div>
+              <div className="text-xs text-slate-500 mt-0.5">{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── RIGHT PANEL ── */}
+
+      <div className="flex items-center justify-center px-6 py-12 bg-slate-900/60 backdrop-blur-sm lg:border-l border-white/5">
+        <div className="w-full max-w-md">
+
+          {/* Mobile-only wordmark */}
+          <div className="flex lg:hidden items-center gap-2 mb-8">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12h4l3-9 4 18 3-9h4" />
+              </svg>
+            </div>
+            <span className="text-white font-bold text-base tracking-tight">
+              Route<span className="text-blue-500">Sync</span> PH
+            </span>
           </div>
 
-          {error && (
-            <Alert className="mb-6 border-red-200 bg-red-50">
-              <AlertDescription className="text-red-800">{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="companyName" className="block text-sm font-medium text-slate-700 mb-2">
-                Company Name
-              </label>
-              <Input
-                id="companyName"
-                name="companyName"
-                placeholder="Your Bus Company"
-                value={formData.companyName}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                Email Address
-              </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
-                Password
-              </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">
-                Confirm Password
-              </label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={loading}
-            >
-              {loading ? 'Creating account...' : 'Register'}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-slate-600 text-sm">
-              Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:underline font-medium">
-                Login here
-              </Link>
+          {/* Heading */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-slate-100 tracking-tight mb-1">
+              Create your account
+            </h2>
+            <p className="text-sm font-light text-slate-500">
+              Register your transport company to get started
             </p>
           </div>
+
+          {/* Progress bars */}
+          <div className="flex gap-1.5 mb-8">
+            <div className="h-0.5 flex-1 rounded-full bg-blue-600" />
+            <div className="h-0.5 flex-1 rounded-full bg-blue-600" />
+            <div className="h-0.5 flex-1 rounded-full bg-white/10" />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 mb-5">
+              <svg className="w-4 h-4 text-red-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span className="text-sm text-red-400">{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <div>
+              <label htmlFor="companyName" className={labelClass}>Company Name</label>
+              <input id="companyName" name="companyName" placeholder="e.g. Batangas Star Bus Lines" value={formData.companyName} onChange={handleChange} required disabled={loading} className={inputClass} />
+            </div>
+
+            <div>
+              <label htmlFor="name" className={labelClass}>Contact Person</label>
+              <input id="name" name="name" placeholder="Full name" value={formData.name} onChange={handleChange} disabled={loading} className={inputClass} />
+            </div>
+
+            <div>
+              <label htmlFor="email" className={labelClass}>Email Address</label>
+              <input id="email" name="email" type="email" placeholder="you@company.com.ph" value={formData.email} onChange={handleChange} required disabled={loading} className={inputClass} />
+            </div>
+
+            <div>
+              <label htmlFor="phone" className={labelClass}>Phone Number</label>
+              <input id="phone" name="phone" type="tel" placeholder="+63 9XX XXX XXXX" value={formData.phone} onChange={handleChange} disabled={loading} className={inputClass} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="city" className={labelClass}>City</label>
+                <input id="city" name="city" placeholder="Lipa City" value={formData.city} onChange={handleChange} disabled={loading} className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="region" className={labelClass}>Region</label>
+                <input id="region" name="region" placeholder="Region IV-A" value={formData.region} onChange={handleChange} disabled={loading} className={inputClass} />
+              </div>
+            </div>
+
+            <div className="border-t border-white/5 !my-2" />
+
+            <div>
+              <label htmlFor="password" className={labelClass}>Password</label>
+              <input id="password" name="password" type="password" placeholder="••••••••" value={formData.password} onChange={handleChange} required disabled={loading} className={inputClass} />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className={labelClass}>Confirm Password</label>
+              <input id="confirmPassword" name="confirmPassword" type="password" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} required disabled={loading} className={inputClass} />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 mt-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z" />
+                  </svg>
+                  Creating account…
+                </>
+              ) : (
+                <>
+                  Create account
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center mt-5 text-sm text-slate-500">
+            Already have an account?{' '}
+            <Link href="/login" className="text-blue-500 hover:underline font-medium">
+              Sign in here
+            </Link>
+          </p>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }
