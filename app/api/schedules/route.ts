@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
 import { ObjectId } from 'mongodb'
 
@@ -10,9 +10,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const db = await connectDB()
-    const schedules = await db
-      .collection('schedules')
+    const db = await connectToDatabase()
+    const schedules = await db?.db.collection('schedules')
       .find({ operatorId: payload.operatorId })
       .toArray()
 
@@ -33,9 +32,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const db = await connectDB()
+    const db = await connectToDatabase()
 
-    const result = await db.collection('schedules').insertOne({
+    const result = await db?.db.collection('schedules').insertOne({
       ...body,
       operatorId: payload.operatorId,
       createdAt: new Date(),
@@ -59,9 +58,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const { id, ...body } = await request.json()
-    const db = await connectDB()
+    const db = await connectToDatabase()
 
-    await db.collection('schedules').updateOne(
+    await db?.db.collection('schedules').updateOne(
       { _id: new ObjectId(id), operatorId: payload.operatorId },
       { $set: { ...body, updatedAt: new Date() } }
     )
@@ -89,8 +88,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 })
     }
 
-    const db = await connectDB()
-    await db.collection('schedules').deleteOne({
+    const db = await connectToDatabase()
+    await db?.db.collection('schedules').deleteOne({
       _id: new ObjectId(id),
       operatorId: payload.operatorId,
     })

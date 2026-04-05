@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
@@ -9,9 +9,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const db = await connectDB()
-    const routes = await db
-      .collection('routes')
+    const db = await connectToDatabase()
+    const routes = await db?.db.collection('routes')
       .find({ operatorId: payload.operatorId })
       .toArray()
 
@@ -32,9 +31,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const db = await connectDB()
+    const db = await connectToDatabase()
 
-    const result = await db.collection('routes').insertOne({
+    const result = await db?.db.collection('routes').insertOne({
       ...body,
       operatorId: payload.operatorId,
       createdAt: new Date(),
