@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import { MapPin, Search, ArrowLeft, Navigation } from 'lucide-react'
+import { MapPin, Search, ArrowLeft, Navigation, Clock, Route } from 'lucide-react'
 
 interface Terminal {
   _id?: string
@@ -42,10 +39,10 @@ export default function MapPage() {
         fetch('/api/public/terminals'),
         fetch('/api/public/routes'),
       ])
-      
+
       const terminalsData = await terminalsRes.json()
       const routesData = await routesRes.json()
-      
+
       setTerminals(terminalsData)
       setRoutes(routesData)
       setFilteredRoutes(routesData)
@@ -58,7 +55,7 @@ export default function MapPage() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
-    
+
     if (!query.trim()) {
       setFilteredRoutes(routes)
       return
@@ -74,161 +71,254 @@ export default function MapPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <nav className="bg-white border-b border-border">
+    <div className="min-h-screen text-slate-100">
+
+      {/* ── NAV ── */}
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-primary hover:text-primary/80">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm font-medium"
+          >
             <ArrowLeft className="w-4 h-4" />
-            <span className="font-semibold">Back to Home</span>
+            Back to Home
           </Link>
-          <h1 className="text-2xl font-bold text-primary">TranSync PH - Route Finder</h1>
-          <div className="w-20"></div>
+
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12h4l3-9 4 18 3-9h4" />
+              </svg>
+            </div>
+            <span className="font-bold text-sm tracking-tight text-white">
+              Route<span className="text-blue-500">Sync</span> PH
+            </span>
+          </div>
+
+          <Link
+            href="/register"
+            className="h-8 px-3 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition"
+          >
+            Get Started
+          </Link>
         </div>
       </nav>
 
-      {/* Search Section */}
-      <div className="bg-gradient-to-br from-primary/5 to-accent/5 py-8">
+      {/* ── SEARCH HERO ── */}
+      <section className="border-b border-white/5 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Find Your Route</h2>
+          <span className="inline-block text-blue-500 text-xs font-mono font-medium tracking-widest uppercase bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded mb-4">
+            Route Finder
+          </span>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-6">
+            Find your route
+          </h1>
           <div className="relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
-            <Input
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+            <input
               type="text"
-              placeholder="Search by route number, starting point, or destination..."
+              placeholder="Search by route number, starting point, or destination…"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 py-3 text-base"
+              className="w-full h-12 pl-10 pr-4 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm font-light placeholder:text-slate-600 focus:outline-none focus:border-blue-600 focus:bg-blue-600/5 transition"
             />
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* ── MAIN CONTENT ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left: Routes List */}
+
+          {/* ── LEFT: ROUTES LIST ── */}
           <div className="lg:col-span-2">
-            <h3 className="text-2xl font-bold text-foreground mb-6">
-              Available Routes {filteredRoutes.length > 0 && `(${filteredRoutes.length})`}
-            </h3>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-slate-100">
+                Available Routes
+                {filteredRoutes.length > 0 && (
+                  <span className="ml-2 text-xs font-mono text-slate-500">({filteredRoutes.length})</span>
+                )}
+              </h2>
+            </div>
 
             {loading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <Card key={i} className="p-6 animate-pulse">
-                    <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                  </Card>
+              <div className="space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-24 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
                 ))}
               </div>
             ) : filteredRoutes.length === 0 ? (
-              <Card className="p-8 text-center">
-                <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <p className="text-muted-foreground">No routes found. Try a different search.</p>
-              </Card>
+              <div className="flex flex-col items-center justify-center py-16 bg-slate-900/40 border border-white/5 rounded-xl">
+                <MapPin className="w-10 h-10 text-slate-700 mb-3" />
+                <p className="text-sm text-slate-500">No routes found. Try a different search.</p>
+              </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="space-y-3">
                 {filteredRoutes.map((route) => (
-                  <Card
+                  <div
                     key={route._id}
-                    className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                    className="group bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl px-5 py-4 hover:border-blue-600/40 hover:bg-slate-900/80 transition cursor-pointer"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-2xl font-bold text-primary">
+                          <span className="text-xl font-bold text-blue-500 tracking-tight">
                             {route.routeNumber}
                           </span>
-                          <span className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
+                          <span className="text-xs font-mono bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
                             {route.distance} km
                           </span>
                         </div>
-                        <p className="text-foreground font-medium mb-1">
-                          {route.startPoint} <span className="text-muted-foreground">→</span>{' '}
+                        <p className="text-sm text-slate-300 font-medium mb-1.5">
+                          {route.startPoint}
+                          <span className="text-slate-600 mx-2">→</span>
                           {route.endPoint}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          Estimated time: {route.estimatedTime}
-                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <Clock className="w-3 h-3" />
+                          {route.estimatedTime}
+                        </div>
                       </div>
-                      <Navigation className="w-5 h-5 text-primary flex-shrink-0" />
+                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center shrink-0 group-hover:bg-blue-600/10 group-hover:border-blue-600/20 transition">
+                        <Navigation className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition" />
+                      </div>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Right: Terminals Map Preview */}
+          {/* ── RIGHT: TERMINALS + MAP ── */}
           <div>
-            <h3 className="text-2xl font-bold text-foreground mb-6">Terminals</h3>
-            
+            <h2 className="text-lg font-semibold text-slate-100 mb-5">Terminals</h2>
+
             {loading ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-muted rounded animate-pulse"></div>
+                  <div key={i} className="h-16 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
                 ))}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 mb-6">
                 {terminals.map((terminal) => (
-                  <Card
+                  <button
                     key={terminal._id}
-                    className="p-4 hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => setSelectedTerminal(terminal)}
+                    className={`w-full text-left px-4 py-3 rounded-xl border transition flex items-start gap-3 ${
+                      selectedTerminal?._id === terminal._id
+                        ? 'bg-blue-600/10 border-blue-600/40'
+                        : 'bg-slate-900/60 border-white/8 hover:border-blue-600/30 hover:bg-slate-900/80'
+                    }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
-                      <div className="flex-1">
-                        <h4 className="font-bold text-foreground text-sm">
-                          {terminal.name}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {terminal.location}
-                        </p>
-                      </div>
+                    <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${
+                      selectedTerminal?._id === terminal._id ? 'text-blue-400' : 'text-slate-500'
+                    }`} />
+                    <div>
+                      <p className={`text-sm font-medium ${
+                        selectedTerminal?._id === terminal._id ? 'text-blue-300' : 'text-slate-300'
+                      }`}>
+                        {terminal.name}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">{terminal.location}</p>
                     </div>
-                  </Card>
+                  </button>
                 ))}
               </div>
             )}
 
-            {/* Map Preview */}
-            <Card className="mt-8 p-4 bg-secondary/5 border-dashed">
-              <div className="w-full h-64 bg-secondary/10 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-2 opacity-50" />
-                  <p className="text-sm text-muted-foreground">
-                    {selectedTerminal ? `${selectedTerminal.name}` : 'Map Preview'}
+            {/* Map preview card */}
+            <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden">
+              <div
+                className="w-full h-56 relative flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
+              >
+                {/* Inner grid */}
+                <div
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    backgroundImage:
+                      'repeating-linear-gradient(0deg,transparent,transparent 19px,rgba(255,255,255,0.04) 19px,rgba(255,255,255,0.04) 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,rgba(255,255,255,0.04) 19px,rgba(255,255,255,0.04) 20px)',
+                  }}
+                />
+                {/* Decorative SVG route lines */}
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 224" preserveAspectRatio="none">
+                  <path d="M10,180 Q80,60 150,100 T290,40" stroke="#2563eb" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.5" />
+                  <path d="M10,130 Q90,190 170,130 T295,150" stroke="#3b82f6" strokeWidth="1" fill="none" opacity="0.3" />
+                  {selectedTerminal ? (
+                    <>
+                      <circle cx="150" cy="100" r="6" fill="#2563eb" opacity="0.9" />
+                      <circle cx="150" cy="100" r="12" fill="#2563eb" opacity="0.15" />
+                    </>
+                  ) : (
+                    <>
+                      <circle cx="80" cy="110" r="3" fill="#60a5fa" opacity="0.6" />
+                      <circle cx="150" cy="100" r="3" fill="#60a5fa" opacity="0.6" />
+                      <circle cx="230" cy="65" r="3" fill="#60a5fa" opacity="0.6" />
+                    </>
+                  )}
+                </svg>
+                {/* Label */}
+                <div className="relative text-center">
+                  <MapPin className="w-5 h-5 text-blue-500 mx-auto mb-1.5" />
+                  <p className="text-xs text-slate-400 font-medium">
+                    {selectedTerminal ? selectedTerminal.name : 'Select a terminal'}
                   </p>
+                  {selectedTerminal && (
+                    <p className="text-xs text-slate-600 mt-0.5">{selectedTerminal.location}</p>
+                  )}
                 </div>
               </div>
-            </Card>
+              <div className="px-4 py-3 border-t border-white/5">
+                <p className="text-xs text-slate-600 font-mono">
+                  {selectedTerminal
+                    ? `${selectedTerminal.lat.toFixed(4)}, ${selectedTerminal.lng.toFixed(4)}`
+                    : 'Live map · Leaflet.js'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="bg-primary text-white py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Are you a bus operator?</h2>
-          <p className="text-lg text-primary-foreground/80 mb-6">
-            Join TranSync PH and reach more commuters with our digital route management platform.
+      {/* ── CTA ── */}
+      <section className="border-t border-white/5 py-16 mt-8">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-100 mb-3">
+            Are you a bus operator?
+          </h2>
+          <p className="text-slate-500 font-light mb-8">
+            Join RouteSync PH and reach more commuters with our digital route management platform.
           </p>
-          <Link href="/register">
-            <Button size="lg" className="bg-white hover:bg-white/90 text-primary">
-              Start Your Free Trial
-            </Button>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 h-11 px-7 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
+          >
+            Start Your Free Trial
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+            </svg>
           </Link>
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-secondary/5 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-muted-foreground text-sm">
-            <p>&copy; 2024 TranSync PH. All rights reserved.</p>
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-white/5 bg-slate-950/80 backdrop-blur-sm py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12h4l3-9 4 18 3-9h4" />
+              </svg>
+            </div>
+            <span className="text-sm font-bold text-slate-400">
+              Route<span className="text-blue-500">Sync</span> PH
+            </span>
+          </div>
+          <p className="text-xs text-slate-600">© 2025 RouteSync PH. All rights reserved.</p>
+          <div className="flex items-center gap-5 text-xs text-slate-600">
+            <Link href="/privacy" className="hover:text-slate-400 transition">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-slate-400 transition">Terms of Service</Link>
           </div>
         </div>
       </footer>
