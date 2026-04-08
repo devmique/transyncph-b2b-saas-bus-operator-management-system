@@ -55,9 +55,11 @@ export default function DashboardLayout({
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
+        <Link href="/">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0 cursor-pointer">
             <Bus className="w-4 h-4 text-white" />
-          </div>
+            </div>
+            </Link>
           <span className="font-bold text-sm tracking-tight text-white">
             Route<span className="text-blue-500">Sync</span> PH
           </span>
@@ -150,9 +152,11 @@ export default function DashboardLayout({
 
           {/* Mobile logo (shown when sidebar is hidden) */}
           <div className="flex items-center gap-2 md:hidden">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center">
+            <Link href="/">
+            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center cursor-pointer">
               <Bus className="w-3.5 h-3.5 text-white" />
             </div>
+            </Link>
             <span className="font-bold text-xs tracking-tight text-white">
               Route<span className="text-blue-500">Sync</span> PH
             </span>

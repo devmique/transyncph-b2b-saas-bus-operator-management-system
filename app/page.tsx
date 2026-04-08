@@ -16,13 +16,13 @@ export default function Home() {
                 <Bus />
               </svg>
             </div>
-            <span className="font-bold text-base tracking-tight text-white">
+            <span className="font-bold text-base tracking-tight text-white hidden sm:block">
               Route<span className="text-blue-500">Sync</span> PH
             </span>
           </div>
 
           <div className="flex items-center gap-6">
-            <Link href="/map" className="text-sm text-slate-400 hover:text-white transition hidden sm:block">
+            <Link href="/map" className="text-sm text-slate-400 hover:text-white transition">
               Route Finder
             </Link>
             <Link href="/login" className="text-sm text-slate-400 hover:text-white transition">
