@@ -56,8 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOperator(data.operator);
     localStorage.setItem('authToken', data.token);
     localStorage.setItem('operator', JSON.stringify(data.operator));
-  };
-
+ 
+  // Also set cookie so middleware can read it
+  document.cookie = `authToken=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+};
   const register = async (data: any) => {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
@@ -82,6 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOperator(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('operator');
+      // Clear cookie
+  document.cookie = 'authToken=; path=/; max-age=0';
   };
 
   return (
