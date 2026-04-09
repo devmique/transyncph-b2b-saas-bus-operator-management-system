@@ -43,11 +43,24 @@ export default function MapPage() {
       const terminalsData = await terminalsRes.json()
       const routesData = await routesRes.json()
 
-      setTerminals(terminalsData)
-      setRoutes(routesData)
-      setFilteredRoutes(routesData)
+      const safeTerminals = Array.isArray(terminalsData) ? terminalsData : []
+      const safeRoutes = Array.isArray(routesData) ? routesData : []
+      if (!terminalsRes.ok || !routesRes.ok) {
+        console.error('Public map data API error', {
+          terminalsStatus: terminalsRes.status,
+          routesStatus: routesRes.status,
+          terminalsError: Array.isArray(terminalsData) ? null : terminalsData,
+          routesError: Array.isArray(routesData) ? null : routesData,
+        })
+      }
+      setTerminals(safeTerminals)
+      setRoutes(safeRoutes)
+      setFilteredRoutes(safeRoutes)
     } catch (error) {
       console.error('Failed to fetch data:', error)
+      setTerminals([])
+      setRoutes([])
+      setFilteredRoutes([])
     } finally {
       setLoading(false)
     }
