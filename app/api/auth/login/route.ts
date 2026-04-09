@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { verifyPassword, generateToken } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { Operator } from '@/lib/types';
 import { z } from 'zod';
 
@@ -9,8 +10,34 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+const LOGIN_RATE_LIMIT_MAX_REQUESTS = 5;
+const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIp(request.headers);
+    const rateLimitResult = checkRateLimit(`login:${clientIp}`, {
+      maxRequests: LOGIN_RATE_LIMIT_MAX_REQUESTS,
+      windowMs: LOGIN_RATE_LIMIT_WINDOW_MS,
+    });
+
+    if (!rateLimitResult.allowed) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+      );
+
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': retryAfterSeconds.toString(),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     
     const validatedData = loginSchema.parse(body);
