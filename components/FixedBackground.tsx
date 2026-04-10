@@ -4,8 +4,11 @@ export default function FixedBackground() {
   const pathname = usePathname()
   const isDashboard = pathname?.startsWith('/dashboard')
   const isMap = pathname?.startsWith('/map')
+  const isResetPaasswordPages =
+  pathname === '/forgot-password' ||
+  pathname === '/reset-password'
 
-  if (isDashboard || isMap) {
+  if (isDashboard || isMap || isResetPaasswordPages ) {
     return (
       <div className="fixed inset-0 -z-10 bg-slate-950 pointer-events-none" />
     )
