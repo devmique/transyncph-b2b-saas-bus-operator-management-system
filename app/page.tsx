@@ -288,7 +288,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
               <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12h4l3-9 4 18 3-9h4" />
+                <Bus/>
               </svg>
             </div>
             <span className="text-sm font-bold text-slate-400">

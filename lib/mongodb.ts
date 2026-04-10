@@ -1,5 +1,6 @@
 import { MongoClient, Db } from 'mongodb';
-
+import dns from "node:dns/promises";
+dns.setServers(["1.1.1.1"]);
 let cachedClient: MongoClient | null = null;
 let cachedDb: Db | null = null;
 
