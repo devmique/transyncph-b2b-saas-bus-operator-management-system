@@ -48,6 +48,7 @@ Create a `.env.local` file with the following variables:
 ```
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
+RESEND_API_KEY=
 ```
 
 4. Run the development server:
@@ -57,48 +58,6 @@ pnpm dev
 
 Visit http://localhost:3000 to see the application.
 
-## Project Structure
-
-```
-├── app/
-│   ├── api/
-│   │   ├── auth/              # Authentication endpoints
-│   │   ├── routes/            # Routes management API
-│   │   ├── schedules/         # Schedules management API
-│   │   ├── terminals/         # Terminals management API
-│   │   ├── announcements/     # Announcements API
-│   │   └── public/            # Public API endpoints
-│   ├── dashboard/             # Operator dashboard pages
-│   ├── login/                 # Login page
-│   ├── register/              # Registration page
-│   ├── map/                   # Public commuter map
-│   ├── page.tsx               # Landing page
-│   └── layout.tsx             # Root layout
-├── context/
-│   └── AuthContext.tsx        # Authentication context
-├── lib/
-│   ├── mongodb.ts             # MongoDB connection
-│   ├── auth.ts                # Auth utilities
-│   └── types.ts               # TypeScript types
-└── components/
-    └── ui/                    # shadcn/ui components
-```
-
-## Key Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new operator
-- `POST /api/auth/login` - Login operator
-
-### Dashboard (Protected)
-- `GET/POST /api/routes` - Manage routes
-- `GET/POST/PUT/DELETE /api/schedules` - Manage schedules
-- `GET/POST /api/terminals` - Manage terminals
-- `GET/POST /api/announcements` - Manage announcements
-
-### Public
-- `GET /api/public/routes` - Search routes (with query parameter)
-- `GET /api/public/terminals` - Get all terminals
 
 ## User Flows
 
@@ -138,18 +97,6 @@ Visit http://localhost:3000 to see the application.
 - Optimized database queries with indexes
 - CSS-in-JS with Tailwind for minimal bundle size
 
-## Deployment
-
-### Deploy to Vercel
-```bash
-pnpm build
-# Vercel CLI or GitHub integration
-```
-
-### Environment Variables
-Add these to your Vercel project settings:
-- `MONGODB_URI`: Your MongoDB connection string
-- `JWT_SECRET`: Strong random string for JWT signing
 
 ## Future Enhancements
 
@@ -163,8 +110,8 @@ Add these to your Vercel project settings:
 
 ## Support
 
-For issues or questions, please open a GitHub issue or contact support@transyncph.com
+For issues or questions, please open a GitHub issue 
 
 ## License
 
-© 2024 TranSync PH. All rights reserved.
+© 2026 TranSync PH. All rights reserved.
