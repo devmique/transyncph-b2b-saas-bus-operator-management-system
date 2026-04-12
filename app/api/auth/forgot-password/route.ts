@@ -1,13 +1,37 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { getDatabase } from '@/lib/mongodb'
 import { Resend } from 'resend'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+const FORGOT_RATE_LIMIT_MAX_REQUESTS = 3
+const FORGOT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+     // Rate limit by IP
+     const clientIp = getClientIp(req.headers)
+     const rateLimitResult = checkRateLimit(`forgot-password:${clientIp}`, {
+       maxRequests: FORGOT_RATE_LIMIT_MAX_REQUESTS,
+       windowMs: FORGOT_RATE_LIMIT_WINDOW_MS,
+     })
+ 
+     if (!rateLimitResult.allowed) {
+       const retryAfterSeconds = Math.max(
+         1,
+         Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+       )
+ 
+       return NextResponse.json(
+         { error: 'Too many requests. Please try again later.' },
+         {
+           status: 429,
+           headers: { 'Retry-After': retryAfterSeconds.toString() },
+         }
+       )
+     }
     const { email } = await req.json()
 
     if (!email || typeof email !== 'string') {
