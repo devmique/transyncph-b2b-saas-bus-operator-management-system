@@ -212,7 +212,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading || !allMet}
-                className="w-full h-11 mt-2 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className=" cursor-pointer w-full h-11 mt-2 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

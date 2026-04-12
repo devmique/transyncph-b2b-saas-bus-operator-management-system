@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
     await db.collection('operators').updateOne(
       { _id: resetRecord.userId },
-      { $set: { passwordHash: newPasswordHash, updatedAt: new Date() } }
+      { $set: { password: newPasswordHash, updatedAt: new Date() } }
     )
 
     // Delete the used token
