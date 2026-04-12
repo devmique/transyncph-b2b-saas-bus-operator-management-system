@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Clock } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 interface Schedule {
   _id?: string
@@ -22,17 +23,25 @@ const inputCls = 'w-full h-10 px-3.5 bg-white/5 border border-white/10 rounded-l
 const labelCls = 'block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5'
 
 export default function SchedulesPage() {
+  const { token } = useAuth()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<Schedule>(empty)
 
-  useEffect(() => { fetchSchedules() }, [])
+  useEffect(() => { fetchSchedules() }, [token]) 
+
+  const authHeaders = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  }
 
   const fetchSchedules = async () => {
     try {
-      const res = await fetch('/api/schedules')
+      const res = await fetch('/api/schedules', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const data = await res.json()
 
       if (!res.ok) {
@@ -51,14 +60,14 @@ export default function SchedulesPage() {
       if (editingId) {
         await fetch('/api/schedules', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify({ id: editingId, ...formData }),
         })
         setEditingId(null)
       } else {
         await fetch('/api/schedules', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify(formData),
         })
       }
@@ -71,8 +80,13 @@ export default function SchedulesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/schedules?id=${id}`, { method: 'DELETE' }); fetchSchedules() }
-    catch (e) { console.error(e) }
+    try {
+      await fetch(`/api/schedules?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      fetchSchedules()
+    } catch (e) { console.error(e) }
   }
 
   return (
