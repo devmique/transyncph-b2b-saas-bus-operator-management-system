@@ -15,20 +15,18 @@ const registerSchema = z.object({
   region: z.string().min(2),
 });
 
-//3 attempts per hour
 const REGISTER_RATE_LIMIT_MAX_REQUESTS = 3;
 const REGISTER_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIp(request.headers);
+    const rateLimitResult = checkRateLimit(`register:${clientIp}`, {
+      maxRequests: REGISTER_RATE_LIMIT_MAX_REQUESTS,
+      windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
+    });
 
-     //  rate limit check — identical pattern to login
-     const clientIp = getClientIp(request.headers);
-     const rateLimitResult = checkRateLimit(`register:${clientIp}`, {
-       maxRequests: REGISTER_RATE_LIMIT_MAX_REQUESTS,
-       windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
-     });
-     if (!rateLimitResult.allowed) {
+    if (!rateLimitResult.allowed) {
       const retryAfterSeconds = Math.max(
         1,
         Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
@@ -41,26 +39,16 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+
     const body = await request.json();
-    
     const validatedData = registerSchema.parse(body);
-    
+
     const db = await getDatabase();
     const operatorsCollection = db.collection<Operator>('operators');
 
-    // Check if email already exists
-    const existingOperator = await operatorsCollection.findOne({ email: validatedData.email });
-    if (existingOperator) {
-      return NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 400 }
-      );
-    }
-
-    // Hash password
+   
     const hashedPassword = await hashPassword(validatedData.password);
 
-    // Create operator
     const operator: Operator = {
       name: validatedData.name,
       email: validatedData.email,
@@ -77,7 +65,6 @@ export async function POST(request: NextRequest) {
 
     const result = await operatorsCollection.insertOne(operator);
 
-    // Generate token
     const token = generateToken({
       operatorId: result.insertedId.toString(),
       email: operator.email,
@@ -104,6 +91,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    //  MongoDB duplicate key — race condition safe
+    if ((error as any).code === 11000) {
+      return NextResponse.json(
+        { error: 'Email already registered' },
+        { status: 400 }
+      );
+    }
+
     console.error('Registration error:', error);
     return NextResponse.json(
       { error: 'Registration failed' },

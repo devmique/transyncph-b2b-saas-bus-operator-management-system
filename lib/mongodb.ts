@@ -18,6 +18,8 @@ export async function connectToDatabase() {
   await client.connect();
 
   const db = client.db('transync_ph');
+  //  ensure indexes once on first connection
+  await db.collection('operators').createIndex({ email: 1 }, { unique: true });
 
   cachedClient = client;
   cachedDb = db;

@@ -77,16 +77,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setOperator(result.operator);
     localStorage.setItem('authToken', result.token);
     localStorage.setItem('operator', JSON.stringify(result.operator));
-  };
+  document.cookie = `authToken=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+};
+  
 
-  const logout = () => {
-    setToken(null);
-    setOperator(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('operator');
-      // Clear cookie
+const logout = () => {
+  setToken(null);
+  setOperator(null);
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('operator');
   document.cookie = 'authToken=; path=/; max-age=0';
-  };
+};
 
   return (
     <AuthContext.Provider
