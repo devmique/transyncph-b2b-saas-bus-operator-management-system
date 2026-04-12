@@ -11,11 +11,13 @@ export default function Home() {
       <nav className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
+           
+            <div className="cursor-pointer w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
               <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <Bus />
               </svg>
             </div>
+          
             <span className="font-bold text-base tracking-tight text-white hidden sm:block">
               Route<span className="text-blue-500">Sync</span> PH
             </span>
@@ -286,11 +288,13 @@ export default function Home() {
       <footer className="border-t border-white/5 bg-slate-950/80 backdrop-blur-sm py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+         
+            <div className="cursor-pointer w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
               <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <Bus/>
               </svg>
             </div>
+        
             <span className="text-sm font-bold text-slate-400">
               Route<span className="text-blue-500">Sync</span> PH
             </span>

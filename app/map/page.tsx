@@ -97,14 +97,6 @@ export default function MapPage() {
             Back to Home
           </Link>
 
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-              <Bus className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-sm tracking-tight text-white">
-              Route<span className="text-blue-500">Sync</span> PH
-            </span>
-          </div>
 
           <Link
             href="/register"
@@ -317,9 +309,10 @@ export default function MapPage() {
       <footer className="border-t border-white/5 bg-slate-950/80 backdrop-blur-sm py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+          
+            <div className="cursor-pointer w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
               <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12h4l3-9 4 18 3-9h4" />
+                <Bus/>
               </svg>
             </div>
             <span className="text-sm font-bold text-slate-400">

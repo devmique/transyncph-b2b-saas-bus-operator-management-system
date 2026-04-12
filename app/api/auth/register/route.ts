@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { hashPassword, generateToken } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { Operator } from '@/lib/types';
 import { z } from 'zod';
 
@@ -14,8 +15,32 @@ const registerSchema = z.object({
   region: z.string().min(2),
 });
 
+//3 attempts per hour
+const REGISTER_RATE_LIMIT_MAX_REQUESTS = 3;
+const REGISTER_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
 export async function POST(request: NextRequest) {
   try {
+
+     //  rate limit check — identical pattern to login
+     const clientIp = getClientIp(request.headers);
+     const rateLimitResult = checkRateLimit(`register:${clientIp}`, {
+       maxRequests: REGISTER_RATE_LIMIT_MAX_REQUESTS,
+       windowMs: REGISTER_RATE_LIMIT_WINDOW_MS,
+     });
+     if (!rateLimitResult.allowed) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+      );
+      return NextResponse.json(
+        { error: 'Too many registration attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': retryAfterSeconds.toString() },
+        }
+      );
+    }
     const body = await request.json();
     
     const validatedData = registerSchema.parse(body);
