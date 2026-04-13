@@ -61,7 +61,7 @@ export default function TerminalsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/terminals/${id}`, { 
+    try { await fetch(`/api/terminals?id=${id}`, { 
       method: 'DELETE', headers: { 
         Authorization: `Bearer ${token}` } }); 
         fetchTerminals() }

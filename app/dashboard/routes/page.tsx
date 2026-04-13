@@ -61,7 +61,7 @@ export default function RoutesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/routes/${id}`, { 
+    try { await fetch(`/api/routes?id=${id}`, { 
       method: 'DELETE', 
       headers: { Authorization: `Bearer ${token}` } }); 
       fetchRoutes() }

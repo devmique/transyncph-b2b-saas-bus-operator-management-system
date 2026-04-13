@@ -70,13 +70,14 @@ export default function AnnouncementsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/announcements/${id}`, 
-      { method: 'DELETE', 
-        headers: { Authorization: `Bearer ${token}` } }); 
-        fetchAnnouncements() }
-    catch (e) { console.error(e) }
+    try {
+      await fetch(`/api/announcements?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      fetchAnnouncements()
+    } catch (e) { console.error(e) }
   }
-
   return (
     <div>
       {/* Page header */}
