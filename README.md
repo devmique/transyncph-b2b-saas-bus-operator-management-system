@@ -5,13 +5,16 @@ A modern SaaS platform for Philippine bus operators to streamline route manageme
 ## Features
 
 ### For Bus Operators (Dashboard)
+
 - **Route Management**: Create and manage bus routes with detailed stops and estimated times
 - **Schedule Management**: Assign drivers and vehicles to routes with flexible scheduling
 - **Terminal Management**: Register and organize terminal locations with GPS coordinates
 - **Announcements**: Broadcast service updates and delays to commuters
 - **Analytics Dashboard**: Monitor operational metrics and performance
+- **Settings**: Edit information, change password for security and account deletion
 
 ### For Commuters (Public Map)
+
 - **Route Finder**: Search and discover bus routes by route number, start point, or destination
 - **Terminal Locator**: Find nearby terminals and get location information
 - **Service Visibility**: View available routes and key operational details
@@ -33,41 +36,47 @@ A modern SaaS platform for Philippine bus operators to streamline route manageme
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd v0-project
 ```
 
-2. Install dependencies:
+1. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
-3. Set up environment variables:
+1. Set up environment variables:
+
 Create a `.env.local` file with the following variables:
+
 ```
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
 RESEND_API_KEY=
 ```
 
-4. Run the development server:
+1. Run the development server:
+
 ```bash
 pnpm dev
 ```
 
-Visit http://localhost:3000 to see the application.
-
+Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
 ## User Flows
 
 ### Operator Registration & Dashboard Access
+
 1. Visit `/register` to create account
 2. After login, access `/dashboard` for overview
 3. Navigate to Routes, Schedules, Terminals, or Announcements from sidebar
 4. Manage operations through intuitive forms and lists
 
 ### Commuter Route Discovery
+
 1. Visit `/map` page for public route finder
 2. Search by route number, starting point, or destination
 3. View available terminals and route details
@@ -76,6 +85,7 @@ Visit http://localhost:3000 to see the application.
 ## Database Schema
 
 ### Collections
+
 - **operators**: Company information and authentication
 - **routes**: Route definitions with stops and times
 - **schedules**: Driver assignments and route schedules
@@ -96,7 +106,6 @@ Visit http://localhost:3000 to see the application.
 - Client-side data fetching with caching
 - Optimized database queries with indexes
 - CSS-in-JS with Tailwind for minimal bundle size
-
 
 ## Future Enhancements
 
