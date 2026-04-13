@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, MapPin } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 interface Route {
   _id?: string
@@ -19,24 +20,28 @@ const inputCls = 'w-full h-10 px-3.5 bg-white/5 border border-white/10 rounded-l
 const labelCls = 'block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5'
 
 export default function RoutesPage() {
+  const { token } = useAuth()
   const [routes, setRoutes] = useState<Route[]>([])
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Route>(empty)
 
-  useEffect(() => { fetchRoutes() }, [])
+  useEffect(() => { fetchRoutes() }, [token])
+
+  const authHeaders = { 
+    'Content-Type': 'application/json', 
+    Authorization: `Bearer ${token}` }
 
   const fetchRoutes = async () => {
     try {
-      const res = await fetch('/api/routes')
+      const res = await fetch('/api/routes', 
+        { headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json()
-
-      if (!res.ok) {
-        console.error('Failed to fetch routes:', data)
-        setRoutes([])
-        return
+      if (!res.ok) { 
+        console.error('Failed to fetch routes:', data); 
+        setRoutes([]); 
+        return 
       }
-
       setRoutes(Array.isArray(data) ? data : [])
     } catch (e) { console.error(e) } finally { setLoading(false) }
   }
@@ -44,17 +49,22 @@ export default function RoutesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/routes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      if (res.ok) { setFormData(empty); setFormOpen(false); fetchRoutes() }
+      const res = await fetch('/api/routes', { 
+        method: 'POST', 
+        headers: authHeaders, 
+        body: JSON.stringify(formData) })
+      if (res.ok) { 
+        setFormData(empty); 
+        setFormOpen(false); 
+        fetchRoutes() }
     } catch (e) { console.error(e) }
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/routes/${id}`, { method: 'DELETE' }); fetchRoutes() }
+    try { await fetch(`/api/routes/${id}`, { 
+      method: 'DELETE', 
+      headers: { Authorization: `Bearer ${token}` } }); 
+      fetchRoutes() }
     catch (e) { console.error(e) }
   }
 
@@ -68,7 +78,7 @@ export default function RoutesPage() {
         </div>
         <button
           onClick={() => setFormOpen(!formOpen)}
-          className="flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
+          className="cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           Add Route
@@ -110,11 +120,11 @@ export default function RoutesPage() {
                 onChange={(e) => setFormData({ ...formData, estimatedTime: e.target.value })} required />
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="submit" className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+              <button type="submit" className="cursor-pointer h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
                 Save Route
               </button>
               <button type="button" onClick={() => setFormOpen(false)}
-                className="h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
+                className="cursor-pointer h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
                 Cancel
               </button>
             </div>
@@ -156,7 +166,7 @@ export default function RoutesPage() {
                 </div>
                 <button
                   onClick={() => route._id && handleDelete(route._id)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition"
+                  className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

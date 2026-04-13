@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
+import { verifyToken, extractTokenFromHeader } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const payload = verifyToken(request)
+    const token = extractTokenFromHeader(request.headers.get('Authorization'))
+    const payload = token ? verifyToken(token) : null
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = verifyToken(request)
+    const token = extractTokenFromHeader(request.headers.get('Authorization'))
+    const payload = token ? verifyToken(token) : null
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Megaphone } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 interface Announcement {
   _id?: string
@@ -24,42 +25,55 @@ const typeMeta = {
 }
 
 export default function AnnouncementsPage() {
+  const { token } = useAuth()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Announcement>(empty)
 
-  useEffect(() => { fetchAnnouncements() }, [])
+  useEffect(() => { fetchAnnouncements() }, [token])
+
+  const authHeaders = { 
+    'Content-Type': 'application/json',
+     Authorization: `Bearer ${token}` }
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/announcements')
+      const res = await fetch('/api/announcements', { 
+        headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json()
-
-      if (!res.ok) {
-        console.error('Failed to fetch announcements:', data)
-        setAnnouncements([])
-        return
-      }
-
+      if (!res.ok) { 
+        console.error('Failed to fetch announcements:', data); 
+        setAnnouncements([]); 
+        return }
       setAnnouncements(Array.isArray(data) ? data : [])
-    } catch (e) { console.error(e) } finally { setLoading(false) }
+    } catch (e) { 
+      console.error(e) 
+    } 
+      finally { setLoading(false) 
+
+      }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      if (res.ok) { setFormData(empty); setFormOpen(false); fetchAnnouncements() }
+      const res = await fetch('/api/announcements', { 
+        method: 'POST', 
+        headers: authHeaders, 
+        body: JSON.stringify(formData) })
+      if (res.ok) { 
+        setFormData(empty); 
+        setFormOpen(false); 
+        fetchAnnouncements() }
     } catch (e) { console.error(e) }
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/announcements/${id}`, { method: 'DELETE' }); fetchAnnouncements() }
+    try { await fetch(`/api/announcements/${id}`, 
+      { method: 'DELETE', 
+        headers: { Authorization: `Bearer ${token}` } }); 
+        fetchAnnouncements() }
     catch (e) { console.error(e) }
   }
 
@@ -73,7 +87,7 @@ export default function AnnouncementsPage() {
         </div>
         <button
           onClick={() => setFormOpen(!formOpen)}
-          className="flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
+          className=" cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           New Announcement
@@ -178,7 +192,7 @@ export default function AnnouncementsPage() {
                   </div>
                   <button
                     onClick={() => a._id && handleDelete(a._id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition shrink-0"
+                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

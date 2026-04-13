@@ -99,7 +99,7 @@ export default function SchedulesPage() {
         </div>
         <button
           onClick={() => { setEditingId(null); setFormData(empty); setFormOpen(!formOpen) }}
-          className="flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
+          className="cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           Add Schedule
@@ -156,11 +156,11 @@ export default function SchedulesPage() {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="submit" className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+              <button type="submit" className="cursor-pointer h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
                 {editingId ? 'Update Schedule' : 'Save Schedule'}
               </button>
               <button type="button" onClick={() => setFormOpen(false)}
-                className="h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
+                className="cursor-pointer h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
                 Cancel
               </button>
             </div>
@@ -209,13 +209,13 @@ export default function SchedulesPage() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleEdit(schedule)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/10 transition"
+                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/10 transition"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => schedule._id && handleDelete(schedule._id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition"
+                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

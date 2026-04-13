@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Building2 } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 interface Terminal {
   _id?: string
@@ -18,24 +19,29 @@ const inputCls = 'w-full h-10 px-3.5 bg-white/5 border border-white/10 rounded-l
 const labelCls = 'block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5'
 
 export default function TerminalsPage() {
+  const { token } = useAuth()
   const [terminals, setTerminals] = useState<Terminal[]>([])
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Terminal>(empty)
 
-  useEffect(() => { fetchTerminals() }, [])
+  useEffect(() => { fetchTerminals() }, [token])
+
+  const authHeaders = { 
+    'Content-Type': 'application/json', 
+    Authorization: `Bearer ${token}` 
+  }
 
   const fetchTerminals = async () => {
     try {
-      const res = await fetch('/api/terminals')
+      const res = await fetch('/api/terminals', { 
+        headers: { 
+          Authorization: `Bearer ${token}` } })
       const data = await res.json()
-
-      if (!res.ok) {
-        console.error('Failed to fetch terminals:', data)
-        setTerminals([])
-        return
-      }
-
+      if (!res.ok) { 
+        console.error('Failed to fetch terminals:', data); 
+        setTerminals([]); 
+        return }
       setTerminals(Array.isArray(data) ? data : [])
     } catch (e) { console.error(e) } finally { setLoading(false) }
   }
@@ -43,19 +49,25 @@ export default function TerminalsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/terminals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      if (res.ok) { setFormData(empty); setFormOpen(false); fetchTerminals() }
+      const res = await fetch('/api/terminals', { 
+        method: 'POST', 
+        headers: authHeaders, 
+        body: JSON.stringify(formData) })
+      if (res.ok) { 
+        setFormData(empty); 
+        setFormOpen(false); 
+        fetchTerminals() }
     } catch (e) { console.error(e) }
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/terminals/${id}`, { method: 'DELETE' }); fetchTerminals() }
+    try { await fetch(`/api/terminals/${id}`, { 
+      method: 'DELETE', headers: { 
+        Authorization: `Bearer ${token}` } }); 
+        fetchTerminals() }
     catch (e) { console.error(e) }
   }
+
 
   return (
     <div>
@@ -67,7 +79,7 @@ export default function TerminalsPage() {
         </div>
         <button
           onClick={() => setFormOpen(!formOpen)}
-          className="flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
+          className="cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           Add Terminal
@@ -104,11 +116,11 @@ export default function TerminalsPage() {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="submit" className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+              <button type="submit" className="cursor-pointer h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
                 Save Terminal
               </button>
               <button type="button" onClick={() => setFormOpen(false)}
-                className="h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
+                className=" cursor-pointer h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
                 Cancel
               </button>
             </div>
@@ -145,7 +157,7 @@ export default function TerminalsPage() {
                 </div>
                 <button
                   onClick={() => terminal._id && handleDelete(terminal._id)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition"
+                  className=" cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
