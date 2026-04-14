@@ -31,7 +31,9 @@ export default function SchedulesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<Schedule>(empty)
 
-  useEffect(() => { fetchSchedules() }, [token]) 
+  useEffect(() => {
+    if (!token) return
+     fetchSchedules() }, [token]) 
 
  
   const fetchSchedules = async () => {

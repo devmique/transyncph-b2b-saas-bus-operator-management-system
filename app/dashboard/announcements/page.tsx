@@ -32,7 +32,9 @@ export default function AnnouncementsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Announcement>(empty)
 
-  useEffect(() => { fetchAnnouncements() }, [token])
+  useEffect(() => { 
+    if (!token) return
+    fetchAnnouncements() }, [token])
 
 
   const fetchAnnouncements = async () => {

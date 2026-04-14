@@ -27,7 +27,9 @@ export default function RoutesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Route>(empty)
 
-  useEffect(() => { fetchRoutes() }, [token])
+  useEffect(() => {
+    if (!token) return
+     fetchRoutes() }, [token])
 
 
   const fetchRoutes = async () => {

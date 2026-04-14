@@ -26,7 +26,9 @@ export default function TerminalsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Terminal>(empty)
 
-  useEffect(() => { fetchTerminals() }, [token])
+  useEffect(() => {
+    if (!token) return
+     fetchTerminals() }, [token])
 
 
 
