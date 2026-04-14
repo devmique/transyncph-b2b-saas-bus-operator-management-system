@@ -23,53 +23,69 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true)
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Announcement>(empty)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => { 
+  useEffect(() => {
     if (!token) return
-    fetchAnnouncements() }, [token])
-
+    fetchAnnouncements()
+  }, [token])
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/announcements', { 
-        headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch('/api/announcements', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       const data = await res.json()
-      if (!res.ok) { 
-        console.error('Failed to fetch announcements:', data); 
-        setAnnouncements([]); 
-        return }
-      setAnnouncements(Array.isArray(data) ? data : [])
-    } catch (e) { 
-      console.error(e) 
-    } 
-      finally { setLoading(false) 
-
+      if (!res.ok) {
+        console.error('Failed to fetch announcements:', data)
+        setAnnouncements([])
+        return
       }
+      setAnnouncements(Array.isArray(data) ? data : [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const res = await fetch('/api/announcements', { 
-        method: 'POST', 
-        headers: authHeaders(token), 
-        body: JSON.stringify(formData) })
-      if (res.ok) { 
-        setFormData(empty); 
-        setFormOpen(false); 
-        fetchAnnouncements() }
-    } catch (e) { console.error(e) }
+      const res = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify(formData),
+      })
+      if (res.ok) {
+        setFormData(empty)
+        setFormOpen(false)
+        fetchAnnouncements()
+      }
+    } catch (e) {
+      console.error(e)
+    }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
+    setDeletingId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingId) return
     try {
-      await fetch(`/api/announcements?id=${id}`, {
+      await fetch(`/api/announcements?id=${deletingId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
       fetchAnnouncements()
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setDeletingId(null)
+    }
   }
+
   return (
     <div>
       {/* Page header */}
@@ -80,7 +96,7 @@ export default function AnnouncementsPage() {
         </div>
         <button
           onClick={() => setFormOpen(!formOpen)}
-          className=" cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
+          className="cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
         >
           <Plus className="w-4 h-4" />
           New Announcement
@@ -132,11 +148,11 @@ export default function AnnouncementsPage() {
               </div>
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="submit" className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+              <button type="submit" className="cursor-pointer h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
                 Create Announcement
               </button>
               <button type="button" onClick={() => setFormOpen(false)}
-                className="h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
+                className="cursor-pointer h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
                 Cancel
               </button>
             </div>
@@ -193,6 +209,39 @@ export default function AnnouncementsPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deletingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 mx-auto mb-4">
+              <Trash2 className="w-5 h-5 text-red-400" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-100 text-center mb-2">Delete Announcement</h3>
+            <p className="text-sm text-slate-400 text-center mb-6">
+              Are you sure you want to delete{' '}
+              <span className="text-slate-200 font-medium">
+                "{announcements.find(a => a._id === deletingId)?.title ?? 'this announcement'}"
+              </span>?
+              This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeletingId(null)}
+                className="cursor-pointer flex-1 h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="cursor-pointer flex-1 h-9 bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -102,7 +102,7 @@ export default function DeleteAccountModal({
           <Button
             onClick={handleDelete}
             disabled={input !== CONFIRM_PHRASE || loading}
-            className="bg-red-600/80 hover:bg-red-600 text-white disabled:opacity-40"
+            className="cursor-pointer bg-red-600/80 hover:bg-red-600 text-white disabled:opacity-40"
           >
             {loading ? 'Deleting…' : 'Delete Account'}
           </Button>

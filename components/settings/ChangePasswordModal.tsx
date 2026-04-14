@@ -110,7 +110,7 @@ export default function ChangePasswordModal({
           <Button
             onClick={handleSubmit}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-500 text-white"
+            className="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white"
           >
             {loading ? 'Updating…' : 'Update Password'}
           </Button>

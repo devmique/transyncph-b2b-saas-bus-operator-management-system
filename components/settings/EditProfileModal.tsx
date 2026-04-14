@@ -99,7 +99,7 @@ export default function EditProfileModal({
           <Button
             onClick={handleSubmit}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-500 text-white"
+            className="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white"
           >
             {loading ? 'Saving…' : 'Save Changes'}
           </Button>

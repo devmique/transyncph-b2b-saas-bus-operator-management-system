@@ -6,7 +6,6 @@ import { useAuth } from '@/context/AuthContext'
 import { authHeaders } from '@/lib/apiHelpers'
 import { Schedule } from '@/types'
 
-
 const empty: Schedule = {
   routeNumber: '', departureTime: '', arrivalTime: '',
   driverName: '', vehicleNumber: '', status: 'active',
@@ -22,27 +21,30 @@ export default function SchedulesPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<Schedule>(empty)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) return
-     fetchSchedules() }, [token]) 
+    fetchSchedules()
+  }, [token])
 
- 
   const fetchSchedules = async () => {
     try {
       const res = await fetch('/api/schedules', {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
-
       if (!res.ok) {
         console.error('Failed to fetch schedules:', data)
         setSchedules([])
         return
       }
-
       setSchedules(Array.isArray(data) ? data : [])
-    } catch (e) { console.error(e) } finally { setLoading(false) }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,22 +64,37 @@ export default function SchedulesPage() {
           body: JSON.stringify(formData),
         })
       }
-      setFormData(empty); setFormOpen(false); fetchSchedules()
-    } catch (e) { console.error(e) }
+      setFormData(empty)
+      setFormOpen(false)
+      fetchSchedules()
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const handleEdit = (s: Schedule) => {
-    setFormData(s); setEditingId(s._id || null); setFormOpen(true)
+    setFormData(s)
+    setEditingId(s._id || null)
+    setFormOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
+    setDeletingId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingId) return
     try {
-      await fetch(`/api/schedules?id=${id}`, {
+      await fetch(`/api/schedules?id=${deletingId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
       fetchSchedules()
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -214,6 +231,39 @@ export default function SchedulesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deletingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 mx-auto mb-4">
+              <Trash2 className="w-5 h-5 text-red-400" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-100 text-center mb-2">Delete Schedule</h3>
+            <p className="text-sm text-slate-400 text-center mb-6">
+              Are you sure you want to delete the schedule for{' '}
+              <span className="text-slate-200 font-medium">
+                {schedules.find(s => s._id === deletingId)?.routeNumber ?? 'this schedule'}
+              </span>?
+              This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeletingId(null)}
+                className="cursor-pointer flex-1 h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="cursor-pointer flex-1 h-9 bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
