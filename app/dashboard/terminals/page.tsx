@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Building2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { authHeaders } from '@/lib/apiHelpers'
 
 interface Terminal {
   _id?: string
@@ -27,10 +28,7 @@ export default function TerminalsPage() {
 
   useEffect(() => { fetchTerminals() }, [token])
 
-  const authHeaders = { 
-    'Content-Type': 'application/json', 
-    Authorization: `Bearer ${token}` 
-  }
+
 
   const fetchTerminals = async () => {
     try {
@@ -51,7 +49,7 @@ export default function TerminalsPage() {
     try {
       const res = await fetch('/api/terminals', { 
         method: 'POST', 
-        headers: authHeaders, 
+        headers: authHeaders(token), 
         body: JSON.stringify(formData) })
       if (res.ok) { 
         setFormData(empty); 

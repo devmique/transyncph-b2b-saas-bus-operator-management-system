@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Megaphone } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { authHeaders } from '@/lib/apiHelpers'
 
 interface Announcement {
   _id?: string
@@ -33,9 +34,6 @@ export default function AnnouncementsPage() {
 
   useEffect(() => { fetchAnnouncements() }, [token])
 
-  const authHeaders = { 
-    'Content-Type': 'application/json',
-     Authorization: `Bearer ${token}` }
 
   const fetchAnnouncements = async () => {
     try {
@@ -60,7 +58,7 @@ export default function AnnouncementsPage() {
     try {
       const res = await fetch('/api/announcements', { 
         method: 'POST', 
-        headers: authHeaders, 
+        headers: authHeaders(token), 
         body: JSON.stringify(formData) })
       if (res.ok) { 
         setFormData(empty); 

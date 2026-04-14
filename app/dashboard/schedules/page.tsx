@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Clock } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { authHeaders } from '@/lib/apiHelpers'
 
 interface Schedule {
   _id?: string
@@ -32,11 +33,7 @@ export default function SchedulesPage() {
 
   useEffect(() => { fetchSchedules() }, [token]) 
 
-  const authHeaders = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  }
-
+ 
   const fetchSchedules = async () => {
     try {
       const res = await fetch('/api/schedules', {
@@ -60,14 +57,14 @@ export default function SchedulesPage() {
       if (editingId) {
         await fetch('/api/schedules', {
           method: 'PUT',
-          headers: authHeaders,
+          headers: authHeaders(token),
           body: JSON.stringify({ id: editingId, ...formData }),
         })
         setEditingId(null)
       } else {
         await fetch('/api/schedules', {
           method: 'POST',
-          headers: authHeaders,
+          headers: authHeaders(token),
           body: JSON.stringify(formData),
         })
       }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, MapPin } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { authHeaders } from '@/lib/apiHelpers'
 
 interface Route {
   _id?: string
@@ -28,9 +29,6 @@ export default function RoutesPage() {
 
   useEffect(() => { fetchRoutes() }, [token])
 
-  const authHeaders = { 
-    'Content-Type': 'application/json', 
-    Authorization: `Bearer ${token}` }
 
   const fetchRoutes = async () => {
     try {
@@ -51,7 +49,7 @@ export default function RoutesPage() {
     try {
       const res = await fetch('/api/routes', { 
         method: 'POST', 
-        headers: authHeaders, 
+        headers: authHeaders(token), 
         body: JSON.stringify(formData) })
       if (res.ok) { 
         setFormData(empty); 
