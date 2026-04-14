@@ -4,15 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, Building2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { authHeaders } from '@/lib/apiHelpers'
-
-interface Terminal {
-  _id?: string
-  name: string
-  location: string
-  lat: number
-  lng: number
-  facilities: string[]
-}
+import { Terminal } from '@/types'
 
 const empty: Terminal = { name: '', location: '', lat: 0, lng: 0, facilities: [] }
 

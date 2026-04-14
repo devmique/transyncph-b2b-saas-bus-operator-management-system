@@ -4,16 +4,8 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Clock } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { authHeaders } from '@/lib/apiHelpers'
+import { Schedule } from '@/types'
 
-interface Schedule {
-  _id?: string
-  routeNumber: string
-  departureTime: string
-  arrivalTime: string
-  driverName: string
-  vehicleNumber: string
-  status: 'active' | 'inactive'
-}
 
 const empty: Schedule = {
   routeNumber: '', departureTime: '', arrivalTime: '',

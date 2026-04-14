@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
 import { authHeaders } from '@/lib/apiHelpers'
-import { OperatorProfile } from '@/types/operator'
+import { OperatorProfile } from '@/types'
 
 interface EditProfileModalProps {
   profile: OperatorProfile

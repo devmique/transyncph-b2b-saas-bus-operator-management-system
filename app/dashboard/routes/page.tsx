@@ -4,15 +4,8 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, MapPin } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { authHeaders } from '@/lib/apiHelpers'
+import { Route } from '@/types'
 
-interface Route {
-  _id?: string
-  routeNumber: string
-  startPoint: string
-  endPoint: string
-  distance: number
-  estimatedTime: string
-}
 
 const empty: Route = { routeNumber: '', startPoint: '', endPoint: '', distance: 0, estimatedTime: '' }
 

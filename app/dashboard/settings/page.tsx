@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import EditProfileModal from '@/components/settings/EditProfileModal'
 import ChangePasswordModal from '@/components/settings/ChangePasswordModal'
 import DeleteAccountModal from '@/components/settings/DeleteAccountModal'
-import { OperatorProfile } from '@/types/operator'
+import { OperatorProfile } from '@/types'
 
 type ActiveModal = 'editProfile' | 'changePassword' | 'deleteAccount' | null
 

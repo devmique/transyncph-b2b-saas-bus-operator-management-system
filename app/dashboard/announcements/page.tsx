@@ -4,15 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, Megaphone } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { authHeaders } from '@/lib/apiHelpers'
-
-interface Announcement {
-  _id?: string
-  title: string
-  message: string
-  type: 'info' | 'warning' | 'alert'
-  affectedRoutes: string[]
-  createdAt?: Date
-}
+import { Announcement } from '@/types'
 
 const empty: Announcement = { title: '', message: '', type: 'info', affectedRoutes: [] }
 
