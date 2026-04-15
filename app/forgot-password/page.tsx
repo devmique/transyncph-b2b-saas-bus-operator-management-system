@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Bus, ArrowLeft, Mail } from 'lucide-react'
+import { ArrowLeft, Mail } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import InputField from '@/components/ui/InputField'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -37,12 +39,6 @@ export default function ForgotPasswordPage() {
     }
   }
 
-  const inputClass =
-    'w-full h-11 px-3.5 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm font-light placeholder:text-slate-600 focus:outline-none focus:border-blue-600 focus:bg-blue-600/5 transition disabled:opacity-50'
-
-  const labelClass =
-    'block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5'
-
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -59,12 +55,14 @@ export default function ForgotPasswordPage() {
             <p className="text-sm font-medium text-slate-300 mb-6">{email}</p>
             <p className="text-xs text-slate-600 mb-8 leading-relaxed">
               Didn&apos;t receive it? Check your spam folder, or{' '}
-              <button
+              <Button
+                type="button"
                 onClick={() => setSent(false)}
-                className="text-blue-500 hover:underline focus:outline-none"
+                variant="link"
+                className="h-auto p-0 text-blue-500 hover:text-blue-400"
               >
                 try again
-              </button>
+              </Button>
               .
             </p>
             <Link
@@ -97,24 +95,22 @@ export default function ForgotPasswordPage() {
             )}
 
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
-              <div>
-                <label htmlFor="email" className={labelClass}>Email Address</label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com.ph"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                  className={inputClass}
-                />
-              </div>
+              <InputField
+                label="Email Address"
+                name="email"
+                type="email"
+                placeholder="you@company.com.ph"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                autoComplete="email"
+              />
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading || !email}
-                className="cursor-pointer w-full h-11 mt-2 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 mt-2 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -127,7 +123,7 @@ export default function ForgotPasswordPage() {
                 ) : (
                   'Send reset link'
                 )}
-              </button>
+              </Button>
             </form>
 
             <div className="mt-6 text-center">

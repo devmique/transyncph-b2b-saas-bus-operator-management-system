@@ -124,7 +124,7 @@ export default function SettingsPage() {
             <Button
               variant="outline"
               onClick={() => setModal('editProfile')}
-              className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
+              className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100 cursor-pointer"
             >
               Edit Profile
             </Button>
@@ -176,7 +176,7 @@ export default function SettingsPage() {
               <Button
                 variant="outline"
                 onClick={() => setModal('changePassword')}
-                className="w-full justify-start border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
+                className="w-full justify-start border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100 cursor-pointer"
               >
                 Change Password
               </Button>
@@ -207,7 +207,7 @@ export default function SettingsPage() {
             <Button
               variant="destructive"
               onClick={() => setModal('deleteAccount')}
-              className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 hover:text-red-300"
+              className="bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 hover:text-red-300 cursor-pointer"
             >
               Delete Account
             </Button>

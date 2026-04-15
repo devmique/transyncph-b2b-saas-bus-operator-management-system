@@ -2,24 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { MapPin, Search, ArrowLeft, Navigation, Clock, Route, Bus } from 'lucide-react'
+import { MapPin, Search, ArrowLeft, Navigation, Clock, Bus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import InputField from '@/components/ui/InputField'
+import { Terminal, Route } from '@/types'
 
-interface Terminal {
-  _id?: string
-  name: string
-  location: string
-  lat: number
-  lng: number
-}
-
-interface Route {
-  _id?: string
-  routeNumber: string
-  startPoint: string
-  endPoint: string
-  distance: number
-  estimatedTime: string
-}
 
 export default function MapPage() {
   const [terminals, setTerminals] = useState<Terminal[]>([])
@@ -98,12 +85,13 @@ export default function MapPage() {
           </Link>
 
 
-          <Link
-            href="/register"
-            className="h-8 px-3 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition"
+          <Button
+            asChild
+            size="sm"
+            className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs"
           >
-            Get Started
-          </Link>
+            <Link href="/register">Get Started</Link>
+          </Button>
         </div>
       </nav>
 
@@ -116,16 +104,15 @@ export default function MapPage() {
           <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-6">
             Find your route
           </h1>
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search by route number, starting point, or destination…"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full h-12 pl-10 pr-4 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm font-light placeholder:text-slate-600 focus:outline-none focus:border-blue-600 focus:bg-blue-600/5 transition"
-            />
-          </div>
+          <InputField
+            label="Search Routes"
+            name="routeSearch"
+            placeholder="Search by route number, starting point, or destination..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="relative"
+            inputSuffix={<Search className="w-4 h-4 text-slate-500 pointer-events-none" />}
+          />
         </div>
       </section>
 
@@ -293,15 +280,14 @@ export default function MapPage() {
           <p className="text-slate-500 font-light mb-8">
             Join RouteSync PH and reach more commuters with our digital route management platform.
           </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 h-11 px-7 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
-          >
-            Start Your Free Trial
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-            </svg>
-          </Link>
+          <Button asChild className="h-11 px-7 bg-blue-600 hover:bg-blue-700 text-white">
+            <Link href="/register">
+              Start Your Free Trial
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+              </svg>
+            </Link>
+          </Button>
         </div>
       </section>
 

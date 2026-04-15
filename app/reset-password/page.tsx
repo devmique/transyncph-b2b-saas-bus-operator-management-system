@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Bus, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import InputField from '@/components/ui/InputField'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -65,12 +67,6 @@ export default function ResetPasswordPage() {
     }
   }
 
-  const inputClass =
-    'w-full h-11 px-3.5 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm font-light placeholder:text-slate-600 focus:outline-none focus:border-blue-600 focus:bg-blue-600/5 transition disabled:opacity-50'
-
-  const labelClass =
-    'block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5'
-
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -94,12 +90,9 @@ export default function ResetPasswordPage() {
             <p className="text-sm font-light text-slate-500 mb-6">
               This link is broken or has already been used.
             </p>
-            <Link
-              href="/forgot-password"
-              className="inline-flex items-center gap-2 h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
-            >
-              Request a new link
-            </Link>
+            <Button asChild className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white">
+              <Link href="/forgot-password">Request a new link</Link>
+            </Button>
           </div>
         ) : (
           /* ── RESET FORM ── */
@@ -130,58 +123,56 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
               {/* New password */}
-              <div>
-                <label htmlFor="password" className={labelClass}>New Password</label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    className={`${inputClass} pr-11`}
-                    autoComplete="new-password"
-                  />
-                  <button
+              <InputField
+                label="New Password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                autoComplete="new-password"
+                inputSuffix={
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowPassword((v) => !v)}
                     disabled={loading}
-                    className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-slate-500 hover:text-slate-300 focus:outline-none rounded-r-lg transition disabled:opacity-50 cursor-pointer"
+                    className="h-11 w-11 rounded-r-lg text-slate-500 hover:text-slate-300 cursor-pointer"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" aria-hidden /> : <Eye className="w-4 h-4" aria-hidden />}
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                }
+              />
 
               {/* Confirm password */}
-              <div>
-                <label htmlFor="confirm" className={labelClass}>Confirm Password</label>
-                <div className="relative">
-                  <input
-                    id="confirm"
-                    type={showConfirm ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    required
-                    disabled={loading}
-                    className={`${inputClass} pr-11`}
-                    autoComplete="new-password"
-                  />
-                  <button
+              <InputField
+                label="Confirm Password"
+                name="confirm"
+                type={showConfirm ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                disabled={loading}
+                autoComplete="new-password"
+                inputSuffix={
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowConfirm((v) => !v)}
                     disabled={loading}
-                    className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-slate-500 hover:text-slate-300 focus:outline-none rounded-r-lg transition disabled:opacity-50 cursor-pointer"
+                    className="h-11 w-11 rounded-r-lg text-slate-500 hover:text-slate-300 cursor-pointer"
                     aria-label={showConfirm ? 'Hide password' : 'Show password'}
                   >
                     {showConfirm ? <EyeOff className="w-4 h-4" aria-hidden /> : <Eye className="w-4 h-4" aria-hidden />}
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                }
+              />
 
               {/* Live requirements checklist */}
               {password.length > 0 && (
@@ -209,10 +200,10 @@ export default function ResetPasswordPage() {
                 </ul>
               )}
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading || !allMet}
-                className=" cursor-pointer w-full h-11 mt-2 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 mt-2 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -231,7 +222,7 @@ export default function ResetPasswordPage() {
                     </svg>
                   </>
                 )}
-              </button>
+              </Button>
             </form>
           </>
         )}

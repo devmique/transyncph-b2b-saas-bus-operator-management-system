@@ -95,7 +95,7 @@ export default function DeleteAccountModal({
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100"
+            className="border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-slate-100 cursor-pointer"
           >
             Cancel
           </Button>

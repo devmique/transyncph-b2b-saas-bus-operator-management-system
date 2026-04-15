@@ -44,6 +44,8 @@ export interface OperatorProfile {
     location: string
     lat: number
     lng: number
-    facilities: string[]
+    facilities?: string[]
   }
+  
+
   

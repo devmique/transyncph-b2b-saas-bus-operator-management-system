@@ -1,4 +1,5 @@
-// components/ui/InputField.tsx
+'use client'
+
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -10,6 +11,11 @@ interface InputFieldProps {
   type?: string
   placeholder?: string
   className?: string
+  disabled?: boolean
+  required?: boolean
+  autoComplete?: string
+  labelSuffix?: React.ReactNode
+  inputSuffix?: React.ReactNode
 }
 
 export default function InputField({
@@ -20,24 +26,44 @@ export default function InputField({
   type = 'text',
   placeholder,
   className,
+  disabled,
+  required,
+  autoComplete,
+  labelSuffix,
+  inputSuffix,
 }: InputFieldProps) {
   return (
     <div className={className}>
-      <Label
-        htmlFor={name}
-        className="text-xs font-medium tracking-wider uppercase text-slate-500 mb-1.5 block"
-      >
-        {label}
-      </Label>
-      <Input
-        id={name}
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="bg-white/5 border-white/10 text-slate-200 placeholder:text-slate-600 focus-visible:ring-blue-500/20 focus-visible:border-blue-500/50"
-      />
+      <div className="flex items-center justify-between mb-1.5">
+        <Label
+          htmlFor={name}
+          className="text-xs font-medium tracking-wider uppercase text-slate-400 block"
+        >
+          {label}
+        </Label>
+        {labelSuffix}
+      </div>
+      <div className="relative">
+        <Input
+          id={name}
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          disabled={disabled}
+          required={required}
+          autoComplete={autoComplete}
+          className={`h-11 bg-white/5 border-white/10 text-slate-100 placeholder:text-slate-600 focus-visible:ring-blue-600/20 focus-visible:border-blue-600 focus-visible:bg-blue-600/5 rounded-lg text-sm font-light transition ${
+            inputSuffix ? 'pr-11' : ''
+          }`}
+        />
+        {inputSuffix && (
+          <div className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center">
+            {inputSuffix}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

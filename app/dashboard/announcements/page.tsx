@@ -5,11 +5,10 @@ import { Plus, Trash2, Megaphone } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { authHeaders } from '@/lib/apiHelpers'
 import { Announcement } from '@/types'
+import { Button } from '@/components/ui/button'
+import InputField from '@/components/ui/InputField'
 
 const empty: Announcement = { title: '', message: '', type: 'info', affectedRoutes: [] }
-
-const inputCls = 'w-full h-10 px-3.5 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm font-light placeholder:text-slate-600 focus:outline-none focus:border-blue-600 focus:bg-blue-600/5 transition'
-const labelCls = 'block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5'
 
 const typeMeta = {
   info:    { label: 'Info',    cls: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
@@ -25,96 +24,70 @@ export default function AnnouncementsPage() {
   const [formData, setFormData] = useState<Announcement>(empty)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!token) return
-    fetchAnnouncements()
-  }, [token])
+  useEffect(() => { if (token) fetchAnnouncements() }, [token])
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/announcements', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await fetch('/api/announcements', { headers: { Authorization: `Bearer ${token}` } })
       const data = await res.json()
-      if (!res.ok) {
-        console.error('Failed to fetch announcements:', data)
-        setAnnouncements([])
-        return
-      }
-      setAnnouncements(Array.isArray(data) ? data : [])
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setLoading(false)
-    }
+      setAnnouncements(res.ok && Array.isArray(data) ? data : [])
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       const res = await fetch('/api/announcements', {
-        method: 'POST',
-        headers: authHeaders(token),
-        body: JSON.stringify(formData),
+        method: 'POST', headers: authHeaders(token), body: JSON.stringify(formData),
       })
-      if (res.ok) {
-        setFormData(empty)
-        setFormOpen(false)
-        fetchAnnouncements()
-      }
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  const handleDelete = (id: string) => {
-    setDeletingId(id)
+      if (res.ok) { setFormData(empty); setFormOpen(false); fetchAnnouncements() }
+    } catch (e) { console.error(e) }
   }
 
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
       await fetch(`/api/announcements?id=${deletingId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
       })
       fetchAnnouncements()
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setDeletingId(null)
-    }
+    } catch (e) { console.error(e) }
+    finally { setDeletingId(null) }
   }
 
   return (
     <div>
-      {/* Page header */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-1">Announcements</h1>
           <p className="text-sm font-light text-slate-500">Notify commuters about updates and delays</p>
         </div>
-        <button
+        <Button
           onClick={() => setFormOpen(!formOpen)}
-          className="cursor-pointer flex items-center gap-2 h-9 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold rounded-lg transition"
+          className="bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold h-9 px-4 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           New Announcement
-        </button>
+        </Button>
       </div>
 
-      {/* Form */}
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">
           <h2 className="text-base font-semibold text-slate-100 mb-5">Create New Announcement</h2>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            <InputField
+              label="Title"
+              name="title"
+              placeholder="e.g., Route 5 Temporary Reroute"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+            />
             <div>
-              <label className={labelCls}>Title</label>
-              <input className={inputCls} placeholder="e.g., Route 5 Temporary Reroute" value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
-            </div>
-            <div>
-              <label className={labelCls}>Message</label>
+              <label className="block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5">
+                Message
+              </label>
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -126,7 +99,7 @@ export default function AnnouncementsPage() {
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Type</label>
+                <label className="block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5">Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as Announcement['type'] })}
@@ -137,35 +110,37 @@ export default function AnnouncementsPage() {
                   <option value="alert" className="bg-slate-900">Alert</option>
                 </select>
               </div>
-              <div>
-                <label className={labelCls}>Affected Routes (comma-separated)</label>
-                <input className={inputCls} placeholder="e.g., RT-001, RT-002"
-                  value={formData.affectedRoutes.join(', ')}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    affectedRoutes: e.target.value.split(',').map((r) => r.trim()),
-                  })} />
-              </div>
+              <InputField
+                label="Affected Routes (comma-separated)"
+                name="affectedRoutes"
+                placeholder="e.g., RT-001, RT-002"
+                value={formData.affectedRoutes.join(', ')}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  affectedRoutes: e.target.value.split(',').map((r) => r.trim()),
+                })}
+              />
             </div>
             <div className="flex gap-2 pt-1">
-              <button type="submit" className="cursor-pointer h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition">
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold h-9 px-4 cursor-pointer">
                 Create Announcement
-              </button>
-              <button type="button" onClick={() => setFormOpen(false)}
-                className="cursor-pointer h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="h-9 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium cursor-pointer"
+                variant="ghost"
+              >
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
         </div>
       )}
 
-      {/* List */}
       {loading ? (
         <div className="space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 bg-slate-900/40 border border-white/5 rounded-xl animate-pulse" />
-          ))}
+          {[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-slate-900/40 border border-white/5 rounded-xl animate-pulse" />)}
         </div>
       ) : announcements.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-slate-900/40 border border-white/5 rounded-xl">
@@ -177,34 +152,30 @@ export default function AnnouncementsPage() {
           {announcements.map((a) => {
             const meta = typeMeta[a.type]
             return (
-              <div key={a._id}
-                className="group bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl px-5 py-4 hover:border-white/12 transition">
+              <div key={a._id} className="group bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl px-5 py-4 hover:border-white/12 transition">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1.5">
                       <h3 className="text-sm font-semibold text-slate-100">{a.title}</h3>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded border ${meta.cls}`}>
-                        {meta.label}
-                      </span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded border ${meta.cls}`}>{meta.label}</span>
                     </div>
                     <p className="text-sm text-slate-400 font-light leading-relaxed mb-2">{a.message}</p>
-                    {a.affectedRoutes && a.affectedRoutes.length > 0 && a.affectedRoutes[0] !== '' && (
+                    {a.affectedRoutes?.length > 0 && a.affectedRoutes[0] !== '' && (
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs text-slate-600">Affected:</span>
                         {a.affectedRoutes.map((r) => (
-                          <span key={r} className="text-xs font-mono bg-white/5 border border-white/8 text-slate-400 px-1.5 py-0.5 rounded">
-                            {r}
-                          </span>
+                          <span key={r} className="text-xs font-mono bg-white/5 border border-white/8 text-slate-400 px-1.5 py-0.5 rounded">{r}</span>
                         ))}
                       </div>
                     )}
                   </div>
-                  <button
-                    onClick={() => a._id && handleDelete(a._id)}
-                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 transition shrink-0"
+                  <Button
+                    variant="ghost"
+                    onClick={() => a._id && setDeletingId(a._id)}
+                    className="w-8 h-8 p-0 text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             )
@@ -212,7 +183,6 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      {/* Delete confirmation dialog */}
       {deletingId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
@@ -224,22 +194,17 @@ export default function AnnouncementsPage() {
               Are you sure you want to delete{' '}
               <span className="text-slate-200 font-medium">
                 "{announcements.find(a => a._id === deletingId)?.title ?? 'this announcement'}"
-              </span>?
-              This cannot be undone.
+              </span>? This cannot be undone.
             </p>
             <div className="flex gap-2">
-              <button
-                onClick={() => setDeletingId(null)}
-                className="cursor-pointer flex-1 h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition"
-              >
+              <Button variant="ghost" onClick={() => setDeletingId(null)}
+                className="flex-1 h-9 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium cursor-pointer">
                 Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="cursor-pointer flex-1 h-9 bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition"
-              >
+              </Button>
+              <Button onClick={confirmDelete}
+                className="flex-1 h-9 bg-red-600/80 hover:bg-red-600 text-white text-sm font-semibold cursor-pointer">
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         </div>
