@@ -37,9 +37,22 @@ export default function AnnouncementsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanedTitle = formData.title.trim()
+    const cleanedMessage = formData.message.trim()
+    const cleanedRoutes = formData.affectedRoutes.map((r) => r.trim()).filter(Boolean)
+
+    if (!cleanedTitle || !cleanedMessage || cleanedRoutes.length === 0) return
+
     try {
       const res = await fetch('/api/announcements', {
-        method: 'POST', headers: authHeaders(token), body: JSON.stringify(formData),
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify({
+          ...formData,
+          title: cleanedTitle,
+          message: cleanedMessage,
+          affectedRoutes: cleanedRoutes,
+        }),
       })
       if (res.ok) { setFormData(empty); setFormOpen(false); fetchAnnouncements() }
     } catch (e) { console.error(e) }
@@ -75,7 +88,7 @@ export default function AnnouncementsPage() {
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">
           <h2 className="text-base font-semibold text-slate-100 mb-5">Create New Announcement</h2>
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <InputField
               label="Title"
               name="title"
@@ -103,6 +116,7 @@ export default function AnnouncementsPage() {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as Announcement['type'] })}
+                  required
                   className="w-full h-10 px-3.5 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-blue-600 transition"
                 >
                   <option value="info" className="bg-slate-900">Information</option>
@@ -119,6 +133,7 @@ export default function AnnouncementsPage() {
                   ...formData,
                   affectedRoutes: e.target.value.split(',').map((r) => r.trim()),
                 })}
+                required
               />
             </div>
             <div className="flex gap-2 pt-1">

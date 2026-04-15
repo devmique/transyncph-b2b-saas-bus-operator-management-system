@@ -35,11 +35,38 @@ export default function SchedulesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanedRouteNumber = formData.routeNumber.trim()
+    const cleanedDepartureTime = formData.departureTime.trim()
+    const cleanedArrivalTime = formData.arrivalTime.trim()
+    const cleanedDriverName = formData.driverName.trim()
+    const cleanedVehicleNumber = formData.vehicleNumber.trim()
+
+    if (!cleanedRouteNumber || !cleanedDepartureTime || !cleanedArrivalTime || !cleanedDriverName || !cleanedVehicleNumber) return
+
     try {
       await fetch('/api/schedules', {
         method: editingId ? 'PUT' : 'POST',
         headers: authHeaders(token),
-        body: JSON.stringify(editingId ? { id: editingId, ...formData } : formData),
+        body: JSON.stringify(
+          editingId
+            ? {
+              id: editingId,
+              ...formData,
+              routeNumber: cleanedRouteNumber,
+              departureTime: cleanedDepartureTime,
+              arrivalTime: cleanedArrivalTime,
+              driverName: cleanedDriverName,
+              vehicleNumber: cleanedVehicleNumber,
+            }
+            : {
+              ...formData,
+              routeNumber: cleanedRouteNumber,
+              departureTime: cleanedDepartureTime,
+              arrivalTime: cleanedArrivalTime,
+              driverName: cleanedDriverName,
+              vehicleNumber: cleanedVehicleNumber,
+            },
+        ),
       })
       setFormData(empty); setEditingId(null); setFormOpen(false); fetchSchedules()
     } catch (e) { console.error(e) }
@@ -79,7 +106,7 @@ export default function SchedulesPage() {
           <h2 className="text-base font-semibold text-slate-100 mb-5">
             {editingId ? 'Edit Schedule' : 'Create New Schedule'}
           </h2>
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <InputField
                 label="Route Number"
@@ -130,6 +157,7 @@ export default function SchedulesPage() {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
+                  required
                   className="w-full h-10 px-3.5 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-blue-600 transition"
                 >
                   <option value="active" className="bg-slate-900">Active</option>

@@ -31,9 +31,25 @@ export default function RoutesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanedRouteNumber = formData.routeNumber.trim()
+    const cleanedStartPoint = formData.startPoint.trim()
+    const cleanedEndPoint = formData.endPoint.trim()
+    const cleanedEstimatedTime = formData.estimatedTime.trim()
+    const hasValidDistance = Number.isFinite(formData.distance) && formData.distance > 0
+
+    if (!cleanedRouteNumber || !cleanedStartPoint || !cleanedEndPoint || !cleanedEstimatedTime || !hasValidDistance) return
+
     try {
       const res = await fetch('/api/routes', {
-        method: 'POST', headers: authHeaders(token), body: JSON.stringify(formData),
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify({
+          ...formData,
+          routeNumber: cleanedRouteNumber,
+          startPoint: cleanedStartPoint,
+          endPoint: cleanedEndPoint,
+          estimatedTime: cleanedEstimatedTime,
+        }),
       })
       if (res.ok) { setFormData(empty); setFormOpen(false); fetchRoutes() }
     } catch (e) { console.error(e) }
@@ -67,7 +83,7 @@ export default function RoutesPage() {
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">
           <h2 className="text-base font-semibold text-slate-100 mb-5">Create New Route</h2>
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <InputField
                 label="Route Number"

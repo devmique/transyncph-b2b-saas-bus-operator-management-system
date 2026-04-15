@@ -31,9 +31,22 @@ export default function TerminalsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const cleanedName = formData.name.trim()
+    const cleanedLocation = formData.location.trim()
+    const hasValidLat = Number.isFinite(formData.lat)
+    const hasValidLng = Number.isFinite(formData.lng)
+
+    if (!cleanedName || !cleanedLocation || !hasValidLat || !hasValidLng) return
+
     try {
       const res = await fetch('/api/terminals', {
-        method: 'POST', headers: authHeaders(token), body: JSON.stringify(formData),
+        method: 'POST',
+        headers: authHeaders(token),
+        body: JSON.stringify({
+          ...formData,
+          name: cleanedName,
+          location: cleanedLocation,
+        }),
       })
       if (res.ok) { setFormData(empty); setFormOpen(false); fetchTerminals() }
     } catch (e) { console.error(e) }
@@ -67,7 +80,7 @@ export default function TerminalsPage() {
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">
           <h2 className="text-base font-semibold text-slate-100 mb-5">Create New Terminal</h2>
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <InputField
                 label="Terminal Name"
@@ -94,6 +107,7 @@ export default function TerminalsPage() {
                 placeholder="e.g., 14.5951"
                 value={String(formData.lat)}
                 onChange={(e) => setFormData({ ...formData, lat: parseFloat(e.target.value) })}
+                required
               />
               <InputField
                 label="Longitude"
@@ -102,6 +116,7 @@ export default function TerminalsPage() {
                 placeholder="e.g., 121.0273"
                 value={String(formData.lng)}
                 onChange={(e) => setFormData({ ...formData, lng: parseFloat(e.target.value) })}
+                required
               />
             </div>
             <div className="flex gap-2 pt-1">
