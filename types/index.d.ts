@@ -47,5 +47,13 @@ export interface OperatorProfile {
     facilities?: string[]
   }
   
-
+  type ActivityItem = {
+    key: string
+    label: string
+    time: string
+    tsMs: number
+  }
+  
+  type AnyDoc = Record<string, any>
+  
   
