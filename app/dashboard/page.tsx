@@ -27,8 +27,7 @@ export default function DashboardPage() {
 
   const [activity, setActivity] = useState<ActivityItem[]>([])
 
-  const statMeta = useMemo(
-    () => [
+  const statMeta = [
       {
         key: 'activeRoutes',
         label: 'Active Routes',
@@ -61,18 +60,16 @@ export default function DashboardPage() {
         bg: 'bg-amber-500/10',
         border: 'border-amber-500/20',
       },
-    ],
-    [],
-  )
+    ]
+   
+  
 
-  const quickMeta = useMemo(
-    () => [
+  const quickMeta = [
       { key: 'onTimeRate', label: 'On-time Rate', accent: 'text-emerald-400' },
       { key: 'fleetUtilization', label: 'Fleet Utilization', accent: 'text-blue-400' },
       { key: 'avgPassengersPerBus', label: 'Avg Passengers/Bus', accent: 'text-violet-400' },
-    ],
-    [],
-  )
+    ]
+   
 
   useEffect(() => {
     if (!token) return

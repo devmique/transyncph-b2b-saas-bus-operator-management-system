@@ -1,4 +1,4 @@
- 
+
 export interface OperatorProfile {
     name: string
     email: string
