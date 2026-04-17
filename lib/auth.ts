@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { AuthToken } from './types';
+import { NextRequest} from 'next/server'
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
@@ -27,9 +28,8 @@ export function verifyToken(token: string): AuthToken | null {
   }
 }
 
-export function extractTokenFromHeader(authHeader: string | null): string | null {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  return authHeader.substring(7);
+
+export function getPayload(request: NextRequest) {
+  const token = request.cookies.get('authToken')?.value
+  return token ? verifyToken(token) : null
 }

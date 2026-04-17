@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, MapPin } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
-import { authHeaders } from '@/lib/apiHelpers'
 import { Route } from '@/types'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
@@ -11,21 +9,23 @@ import InputField from '@/components/ui/InputField'
 const empty: Route = { routeNumber: '', startPoint: '', endPoint: '', distance: 0, estimatedTime: '' }
 
 export default function RoutesPage() {
-  const { token } = useAuth()
   const [routes, setRoutes] = useState<Route[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Route>(empty)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => { if (token) fetchRoutes() }, [token])
+  useEffect(() => { fetchRoutes() }, [])
 
   const fetchRoutes = async () => {
     try {
-      const res = await fetch('/api/routes', { headers: { Authorization: `Bearer ${token}` } })
+      setError('')
+      const res = await fetch('/api/routes')
       const data = await res.json()
-      setRoutes(res.ok && Array.isArray(data) ? data : [])
-    } catch (e) { console.error(e) }
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch routes')
+      setRoutes(Array.isArray(data) ? data : [])
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to fetch routes') }
     finally { setLoading(false) }
   }
 
@@ -40,9 +40,10 @@ export default function RoutesPage() {
     if (!cleanedRouteNumber || !cleanedStartPoint || !cleanedEndPoint || !cleanedEstimatedTime || !hasValidDistance) return
 
     try {
+      setError('')
       const res = await fetch('/api/routes', {
         method: 'POST',
-        headers: authHeaders(token),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           routeNumber: cleanedRouteNumber,
@@ -51,16 +52,21 @@ export default function RoutesPage() {
           estimatedTime: cleanedEstimatedTime,
         }),
       })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to save route')
       if (res.ok) { setFormData(empty); setFormOpen(false); fetchRoutes() }
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to save route') }
   }
 
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
-      await fetch(`/api/routes?id=${deletingId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      setError('')
+      const res = await fetch(`/api/routes?id=${deletingId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete route')
       fetchRoutes()
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to delete route') }
     finally { setDeletingId(null) }
   }
 
@@ -79,6 +85,7 @@ export default function RoutesPage() {
           Add Route
         </Button>
       </div>
+      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">

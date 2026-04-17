@@ -1,76 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/mongodb'
-import { extractTokenFromHeader, verifyToken } from '@/lib/auth'
+import { getDatabase } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/auth'
 import { ObjectId } from 'mongodb'
+import { z } from 'zod'
+import { getPayload } from '@/lib/auth'
+
+const announcementSchema = z.object({
+  title: z.string().min(1).max(200),
+  message: z.string().min(1).max(2000),
+  type: z.enum(['info', 'warning', 'alert']),
+  affectedRoutes: z.array(z.string().min(1).max(50)).min(1).max(50),
+})
 
 export async function GET(request: NextRequest) {
+  const payload = getPayload(request)
+  if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const token = extractTokenFromHeader(request.headers.get('Authorization'))
-    const payload = token ? verifyToken(token) : null
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const db = await connectToDatabase()
-    const announcements = await db?.db.collection('announcements')
+    const db = await getDatabase()
+    const announcements = await db.collection('announcements')
       .find({ operatorId: payload.operatorId })
+      .sort({ createdAt: -1 })
       .toArray()
-
     return NextResponse.json(announcements)
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch announcements' },
-      { status: 500 }
-    )
+  } catch {
+    return NextResponse.json({ error: 'Failed to fetch announcements' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  const payload = getPayload(request)
+  if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
-    const token = extractTokenFromHeader(request.headers.get('Authorization'))
-    const payload = token ? verifyToken(token) : null
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const body = await request.json()
+    const parsed = announcementSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 })
     }
 
-    const body = await request.json()
-    const { db } = await connectToDatabase()
-    const result = await db?.collection('announcements').insertOne({
-      ...body,
+    const db = await getDatabase()
+    const result = await db.collection('announcements').insertOne({
+      ...parsed.data,
       operatorId: payload.operatorId,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
 
-    return NextResponse.json({ id: result.insertedId, ...body }, { status: 201 })
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create announcement' },
-      { status: 500 }
-    )
+    return NextResponse.json({ id: result.insertedId, ...parsed.data }, { status: 201 })
+  } catch {
+    return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 })
   }
 }
+
 export async function DELETE(request: NextRequest) {
+  const payload = getPayload(request)
+  if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+  if (!id || !ObjectId.isValid(id)) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  }
+
   try {
-    const token = extractTokenFromHeader(request.headers.get('Authorization'))
-    const payload = token ? verifyToken(token) : null
-    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-    if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
-
-    const db = await connectToDatabase()
-    await db?.db.collection('announcements').deleteOne({
+    const db = await getDatabase()
+    await db.collection('announcements').deleteOne({
       _id: new ObjectId(id),
       operatorId: payload.operatorId,
     })
-
     return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete announcement' },
-      { status: 500 }
-    )
+  } catch {
+    return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 })
   }
 }

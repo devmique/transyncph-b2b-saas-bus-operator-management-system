@@ -1,18 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/mongodb'
-import { verifyToken, extractTokenFromHeader } from '@/lib/auth'
+import { getDatabase } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/auth'
 import { ObjectId } from 'mongodb'
+import { z } from 'zod'
+import { getPayload } from '@/lib/auth'
+
+const scheduleSchema = z.object({
+  routeNumber: z.string().min(1).max(50),
+  departureTime: z.string().min(1).max(20),
+  arrivalTime: z.string().min(1).max(20),
+  driverName: z.string().min(1).max(120),
+  vehicleNumber: z.string().min(1).max(50),
+  status: z.enum(['active', 'inactive']),
+})
+
+const scheduleUpdateSchema = scheduleSchema.extend({
+  id: z.string().min(1),
+})
 
 export async function GET(request: NextRequest) {
   try {
-    const token = extractTokenFromHeader(request.headers.get('Authorization'))
-    const payload = token ? verifyToken(token) : null
+    const payload = getPayload(request)
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const db = await connectToDatabase()
-    const schedules = await db?.db.collection('schedules')
+    const db = await getDatabase()
+    const schedules = await db.collection('schedules')
       .find({ operatorId: payload.operatorId })
       .toArray()
 
@@ -27,23 +41,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = extractTokenFromHeader(request.headers.get('Authorization'))
-    const payload = token ? verifyToken(token) : null
+    const payload = getPayload(request)
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
-    const db = await connectToDatabase()
+    const parsed = scheduleSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 })
+    }
 
-    const result = await db?.db.collection('schedules').insertOne({
-      ...body,
+    const db = await getDatabase()
+
+    const result = await db.collection('schedules').insertOne({
+      ...parsed.data,
       operatorId: payload.operatorId,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
 
-    return NextResponse.json({ id: result.insertedId, ...body }, { status: 201 })
+    return NextResponse.json({ id: result.insertedId, ...parsed.data }, { status: 201 })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create schedule' },
@@ -54,21 +72,29 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const token = extractTokenFromHeader(request.headers.get('Authorization'))
-    const payload = token ? verifyToken(token) : null
+    const payload = getPayload(request)
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id, ...body } = await request.json()
-    const db = await connectToDatabase()
+    const body = await request.json()
+    const parsed = scheduleUpdateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 })
+    }
+    if (!ObjectId.isValid(parsed.data.id)) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+    }
 
-    await db?.db.collection('schedules').updateOne(
+    const { id, ...scheduleData } = parsed.data
+    const db = await getDatabase()
+
+    await db.collection('schedules').updateOne(
       { _id: new ObjectId(id), operatorId: payload.operatorId },
-      { $set: { ...body, updatedAt: new Date() } }
+      { $set: { ...scheduleData, updatedAt: new Date() } }
     )
 
-    return NextResponse.json({ id, ...body })
+    return NextResponse.json({ id, ...scheduleData })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update schedule' },
@@ -79,21 +105,20 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const token = extractTokenFromHeader(request.headers.get('Authorization'))
-const payload = token ? verifyToken(token) : null
-if (!payload) {
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-}
+    const payload = getPayload(request)
+    if (!payload) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID required' }, { status: 400 })
+    if (!id || !ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
     }
 
-    const db = await connectToDatabase()
-    await db?.db.collection('schedules').deleteOne({
+    const db = await getDatabase()
+    await db.collection('schedules').deleteOne({
       _id: new ObjectId(id),
       operatorId: payload.operatorId,
     })

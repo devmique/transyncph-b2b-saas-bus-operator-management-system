@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/mongodb'
+import { getDatabase } from '@/lib/mongodb'
 
 export async function GET(request: NextRequest) {
   try {
-    const db = await connectToDatabase()
-    const terminals = await db?.db.collection('terminals')
+    const db = await getDatabase()
+    const terminals = await db.collection('terminals')
       .find({})
       .toArray()
 

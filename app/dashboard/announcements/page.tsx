@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Megaphone } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
-import { authHeaders } from '@/lib/apiHelpers'
 import { Announcement } from '@/types'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
@@ -17,21 +15,23 @@ const typeMeta = {
 }
 
 export default function AnnouncementsPage() {
-  const { token } = useAuth()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Announcement>(empty)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => { if (token) fetchAnnouncements() }, [token])
+  useEffect(() => { fetchAnnouncements() }, [])
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/announcements', { headers: { Authorization: `Bearer ${token}` } })
+      setError('')
+      const res = await fetch('/api/announcements')
       const data = await res.json()
-      setAnnouncements(res.ok && Array.isArray(data) ? data : [])
-    } catch (e) { console.error(e) }
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch announcements')
+      setAnnouncements(Array.isArray(data) ? data : [])
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to fetch announcements') }
     finally { setLoading(false) }
   }
 
@@ -44,9 +44,10 @@ export default function AnnouncementsPage() {
     if (!cleanedTitle || !cleanedMessage || cleanedRoutes.length === 0) return
 
     try {
+      setError('')
       const res = await fetch('/api/announcements', {
         method: 'POST',
-        headers: authHeaders(token),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           title: cleanedTitle,
@@ -54,18 +55,23 @@ export default function AnnouncementsPage() {
           affectedRoutes: cleanedRoutes,
         }),
       })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to create announcement')
       if (res.ok) { setFormData(empty); setFormOpen(false); fetchAnnouncements() }
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to create announcement') }
   }
 
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
-      await fetch(`/api/announcements?id=${deletingId}`, {
-        method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+      setError('')
+      const res = await fetch(`/api/announcements?id=${deletingId}`, {
+        method: 'DELETE',
       })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete announcement')
       fetchAnnouncements()
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to delete announcement') }
     finally { setDeletingId(null) }
   }
 
@@ -84,6 +90,7 @@ export default function AnnouncementsPage() {
           New Announcement
         </Button>
       </div>
+      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">

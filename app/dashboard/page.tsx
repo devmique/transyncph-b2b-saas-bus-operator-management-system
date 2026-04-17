@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { Bus, Users, MapPin, TrendingUp } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
 import { safeDateToMs, formatTimeAgo, formatPHPCompact } from '@/utils/format'
 import { ActivityItem, AnyDoc } from '@/types'
 
 
 export default function DashboardPage() {
-  const { token } = useAuth()
-
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const [statsValues, setStatsValues] = useState({
     activeRoutes: '—',
@@ -72,18 +70,18 @@ export default function DashboardPage() {
    
 
   useEffect(() => {
-    if (!token) return
-
     let cancelled = false
 
     const fetchDashboardData = async () => {
       setLoading(true)
       try {
-        const headers = { Authorization: `Bearer ${token}` }
+        setError('')
 
         const fetchJson = async (url: string) => {
-          const res = await fetch(url, { headers })
-          return res.ok ? res.json() : null
+          const res = await fetch(url)
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || `Failed to fetch ${url}`)
+          return data
         }
 
         const [announcementsRaw, routesRaw, schedulesRaw, terminalsRaw] = await Promise.all([
@@ -208,9 +206,12 @@ export default function DashboardPage() {
 
           setActivity(recent)
         }
-      } catch {
+      } catch (e) {
         // Keep dashboard usable if one request fails.
-        if (!cancelled) setActivity([])
+        if (!cancelled) {
+          setActivity([])
+          setError(e instanceof Error ? e.message : 'Failed to load dashboard data')
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -221,7 +222,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [token])
+  }, [])
 
   return (
     <div>
@@ -230,6 +231,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-1">Welcome back</h1>
         <p className="text-sm font-light text-slate-500">Here&apos;s an overview of your bus operations.</p>
       </div>
+      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 
       {/* ── STAT CARDS ── */}
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">

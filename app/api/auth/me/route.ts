@@ -3,13 +3,16 @@ import { getDatabase } from '@/lib/mongodb';
 import { verifyToken } from '@/lib/auth';
 import { Operator } from '@/lib/types';
 import { ObjectId } from 'mongodb';
+import { getPayload } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
-  const token = request.cookies.get('authToken')?.value;
-  const payload = token ? verifyToken(token) : null;
+  const payload = getPayload(request)
 
   if (!payload) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!ObjectId.isValid(payload.operatorId)) {
+    return NextResponse.json({ error: 'Invalid operator ID' }, { status: 400 });
   }
 
   try {

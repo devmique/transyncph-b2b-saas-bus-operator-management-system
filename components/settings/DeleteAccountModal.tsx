@@ -12,10 +12,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { authHeaders } from '@/lib/apiHelpers'
 
 interface DeleteAccountModalProps {
-  token: string
   companyName: string
   onClose: () => void
   onDeleted: () => void
@@ -24,7 +22,6 @@ interface DeleteAccountModalProps {
 const CONFIRM_PHRASE = 'delete my account'
 
 export default function DeleteAccountModal({
-  token,
   companyName,
   onClose,
   onDeleted,
@@ -39,7 +36,6 @@ export default function DeleteAccountModal({
     try {
       const res = await fetch('/api/operator/delete-account', {
         method: 'DELETE',
-        headers: authHeaders(token),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to delete account')

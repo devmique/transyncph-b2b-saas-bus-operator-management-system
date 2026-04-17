@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Building2 } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
-import { authHeaders } from '@/lib/apiHelpers'
 import { Terminal } from '@/types'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
@@ -11,21 +9,23 @@ import InputField from '@/components/ui/InputField'
 const empty: Terminal = { name: '', location: '', lat: 0, lng: 0, facilities: [] }
 
 export default function TerminalsPage() {
-  const { token } = useAuth()
   const [terminals, setTerminals] = useState<Terminal[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Terminal>(empty)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => { if (token) fetchTerminals() }, [token])
+  useEffect(() => { fetchTerminals() }, [])
 
   const fetchTerminals = async () => {
     try {
-      const res = await fetch('/api/terminals', { headers: { Authorization: `Bearer ${token}` } })
+      setError('')
+      const res = await fetch('/api/terminals')
       const data = await res.json()
-      setTerminals(res.ok && Array.isArray(data) ? data : [])
-    } catch (e) { console.error(e) }
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch terminals')
+      setTerminals(Array.isArray(data) ? data : [])
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to fetch terminals') }
     finally { setLoading(false) }
   }
 
@@ -39,25 +39,31 @@ export default function TerminalsPage() {
     if (!cleanedName || !cleanedLocation || !hasValidLat || !hasValidLng) return
 
     try {
+      setError('')
       const res = await fetch('/api/terminals', {
         method: 'POST',
-        headers: authHeaders(token),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           name: cleanedName,
           location: cleanedLocation,
         }),
       })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to save terminal')
       if (res.ok) { setFormData(empty); setFormOpen(false); fetchTerminals() }
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to save terminal') }
   }
 
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
-      await fetch(`/api/terminals?id=${deletingId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      setError('')
+      const res = await fetch(`/api/terminals?id=${deletingId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete terminal')
       fetchTerminals()
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to delete terminal') }
     finally { setDeletingId(null) }
   }
 
@@ -76,6 +82,7 @@ export default function TerminalsPage() {
           Add Terminal
         </Button>
       </div>
+      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">

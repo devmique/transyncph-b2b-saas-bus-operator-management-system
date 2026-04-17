@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Clock } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
-import { authHeaders } from '@/lib/apiHelpers'
 import { Schedule } from '@/types'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
@@ -14,22 +12,24 @@ const empty: Schedule = {
 }
 
 export default function SchedulesPage() {
-  const { token } = useAuth()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<Schedule>(empty)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => { if (token) fetchSchedules() }, [token])
+  useEffect(() => { fetchSchedules() }, [])
 
   const fetchSchedules = async () => {
     try {
-      const res = await fetch('/api/schedules', { headers: { Authorization: `Bearer ${token}` } })
+      setError('')
+      const res = await fetch('/api/schedules')
       const data = await res.json()
-      setSchedules(res.ok && Array.isArray(data) ? data : [])
-    } catch (e) { console.error(e) }
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch schedules')
+      setSchedules(Array.isArray(data) ? data : [])
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to fetch schedules') }
     finally { setLoading(false) }
   }
 
@@ -44,9 +44,10 @@ export default function SchedulesPage() {
     if (!cleanedRouteNumber || !cleanedDepartureTime || !cleanedArrivalTime || !cleanedDriverName || !cleanedVehicleNumber) return
 
     try {
-      await fetch('/api/schedules', {
+      setError('')
+      const res = await fetch('/api/schedules', {
         method: editingId ? 'PUT' : 'POST',
-        headers: authHeaders(token),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           editingId
             ? {
@@ -68,8 +69,10 @@ export default function SchedulesPage() {
             },
         ),
       })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to save schedule')
       setFormData(empty); setEditingId(null); setFormOpen(false); fetchSchedules()
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to save schedule') }
   }
 
   const handleEdit = (s: Schedule) => {
@@ -79,9 +82,12 @@ export default function SchedulesPage() {
   const confirmDelete = async () => {
     if (!deletingId) return
     try {
-      await fetch(`/api/schedules?id=${deletingId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      setError('')
+      const res = await fetch(`/api/schedules?id=${deletingId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete schedule')
       fetchSchedules()
-    } catch (e) { console.error(e) }
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to delete schedule') }
     finally { setDeletingId(null) }
   }
 
@@ -100,6 +106,7 @@ export default function SchedulesPage() {
           Add Schedule
         </Button>
       </div>
+      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">

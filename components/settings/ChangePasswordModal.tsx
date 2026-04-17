@@ -10,16 +10,13 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
-import { authHeaders } from '@/lib/apiHelpers'
 
 interface ChangePasswordModalProps {
-  token: string
   onClose: () => void
   onSaved: () => void
 }
 
 export default function ChangePasswordModal({
-  token,
   onClose,
   onSaved,
 }: ChangePasswordModalProps) {
@@ -49,7 +46,7 @@ export default function ChangePasswordModal({
     try {
       const res = await fetch('/api/operator/change-password', {
         method: 'POST',
-        headers: authHeaders(token),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           currentPassword: form.currentPassword,
           newPassword: form.newPassword,

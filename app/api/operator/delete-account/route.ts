@@ -2,15 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { getDatabase } from '@/lib/mongodb'
-import { extractTokenFromHeader, verifyToken } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth'
+import { getPayload } from '@/lib/auth'
 
 export async function DELETE(req: NextRequest) {
   try {
-    const token = extractTokenFromHeader(req.headers.get('authorization'))
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const payload = verifyToken(token)
+    const payload = getPayload(req)
     if (!payload) return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+    if (!ObjectId.isValid(payload.operatorId)) {
+      return NextResponse.json({ error: 'Invalid operator ID' }, { status: 400 })
+    }
 
     const db = await getDatabase()
 

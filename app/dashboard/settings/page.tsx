@@ -15,7 +15,7 @@ import { OperatorProfile } from '@/types'
 type ActiveModal = 'editProfile' | 'changePassword' | 'deleteAccount' | null
 
 export default function SettingsPage() {
-  const { token, operator, logout } = useAuth()
+  const { operator, logout } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -32,12 +32,9 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    if (!token) return
     async function fetchProfile() {
       try {
-        const res = await fetch('/api/operator/profile', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const res = await fetch('/api/operator/profile')
         const data = await res.json()
         if (!res.ok) throw new Error(data.error)
         setProfile(data.operator)
@@ -48,7 +45,7 @@ export default function SettingsPage() {
       }
     }
     fetchProfile()
-  }, [token])
+  }, [])
 
   function handleProfileSaved(updated: OperatorProfile) {
     setProfile(updated)
@@ -216,24 +213,21 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
-      {modal === 'editProfile' && profile && token && (
+      {modal === 'editProfile' && profile && (
         <EditProfileModal
           profile={profile}
-          token={token}
           onClose={() => setModal(null)}
           onSaved={handleProfileSaved}
         />
       )}
-      {modal === 'changePassword' && token && (
+      {modal === 'changePassword' && (
         <ChangePasswordModal
-          token={token}
           onClose={() => setModal(null)}
           onSaved={handlePasswordSaved}
         />
       )}
-      {modal === 'deleteAccount' && token && (
+      {modal === 'deleteAccount' && (
         <DeleteAccountModal
-          token={token}
           companyName={profile?.companyName ?? operator?.companyName ?? 'your'}
           onClose={() => setModal(null)}
           onDeleted={handleDeleted}

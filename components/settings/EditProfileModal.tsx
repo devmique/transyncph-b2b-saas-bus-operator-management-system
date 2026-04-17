@@ -11,19 +11,16 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
-import { authHeaders } from '@/lib/apiHelpers'
 import { OperatorProfile } from '@/types'
 
 interface EditProfileModalProps {
   profile: OperatorProfile
-  token: string
   onClose: () => void
   onSaved: (updated: OperatorProfile) => void
 }
 
 export default function EditProfileModal({
   profile,
-  token,
   onClose,
   onSaved,
 }: EditProfileModalProps) {
@@ -45,7 +42,7 @@ export default function EditProfileModal({
     try {
       const res = await fetch('/api/operator/profile', {
         method: 'PATCH',
-        headers: authHeaders(token),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
