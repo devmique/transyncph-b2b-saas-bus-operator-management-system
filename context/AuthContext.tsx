@@ -11,32 +11,33 @@ interface OperatorInfo {
 }
 
 interface AuthContextType {
-  token: string | null;
   operator: OperatorInfo | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
-  logout: () => void;
+  register: (data: RegisterData) => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  companyName: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
   const [operator, setOperator] = useState<OperatorInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load token from localStorage on mount
+  // Rehydrate from /api/auth/me on mount — cookie is sent automatically
   useEffect(() => {
-    const savedToken = localStorage.getItem('authToken');
-    if (savedToken) {
-      setToken(savedToken);
-      const savedOperator = localStorage.getItem('operator');
-      if (savedOperator) {
-        setOperator(JSON.parse(savedOperator));
-      }
-    }
-    setIsLoading(false);
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setOperator(data))
+      .catch(() => setOperator(null))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -52,15 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json();
-    setToken(data.token);
+    // Cookie is set by the server — we just store the non-sensitive operator info
     setOperator(data.operator);
-    localStorage.setItem('authToken', data.token);
-    localStorage.setItem('operator', JSON.stringify(data.operator));
- 
-  // Also set cookie so middleware can read it
-  document.cookie = `authToken=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-};
-  const register = async (data: any) => {
+  };
+
+  const register = async (data: RegisterData) => {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,33 +70,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const result = await response.json();
-    setToken(result.token);
     setOperator(result.operator);
-    localStorage.setItem('authToken', result.token);
-    localStorage.setItem('operator', JSON.stringify(result.operator));
-  document.cookie = `authToken=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-};
-  
+  };
 
-const logout = () => {
-  setToken(null);
-  setOperator(null);
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('operator');
-  document.cookie = 'authToken=; path=/; max-age=0';
-};
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setOperator(null);
+  };
 
   return (
-    <AuthContext.Provider
-      value={{
-        token,
-        operator,
-        isLoading,
-        login,
-        register,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ operator, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -107,8 +87,6 @@ const logout = () => {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Bus, Users, MapPin, TrendingUp } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { safeDateToMs, formatTimeAgo, formatPHPCompact } from '@/utils/format'

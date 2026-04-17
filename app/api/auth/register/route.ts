@@ -46,7 +46,17 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
     const operatorsCollection = db.collection<Operator>('operators');
 
-   
+    // Check if email already exists (better UX)
+    const existingUser = await operatorsCollection.findOne({
+      email: validatedData.email,
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Email already registered' },
+        { status: 400 }
+      );
+    }
     const hashedPassword = await hashPassword(validatedData.password);
 
     const operator: Operator = {
@@ -71,19 +81,30 @@ export async function POST(request: NextRequest) {
       tier: operator.tier,
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: 'Registration successful',
-        token,
         operator: {
           id: result.insertedId,
           name: operator.name,
           email: operator.email,
+          companyName: operator.companyName,
           tier: operator.tier,
         },
       },
       { status: 201 }
     );
+    
+    response.cookies.set('authToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+    
+    return response;
+    
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

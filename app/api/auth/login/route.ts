@@ -26,44 +26,35 @@ export async function POST(request: NextRequest) {
         1,
         Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
       );
-
       return NextResponse.json(
         { error: 'Too many login attempts. Please try again later.' },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': retryAfterSeconds.toString(),
-          },
-        }
+        { status: 429, headers: { 'Retry-After': retryAfterSeconds.toString() } }
       );
     }
 
     const body = await request.json();
-    
     const validatedData = loginSchema.parse(body);
-    
+
     const db = await getDatabase();
-    const operatorsCollection = db.collection<Operator>('operators');
+    const operator = await db.collection<Operator>('operators').findOne({
+      email: validatedData.email,
+    });
 
-    // Find operator by email
-    const operator = await operatorsCollection.findOne({ email: validatedData.email });
-    if (!operator) {
+    // Constant-time: always verify even if operator not found
+    // it will make the response time consistent whether the user exists or not
+    const dummyHash = '$2a$10$dummyhashfortimingnormalization000000000000000000000';
+    const passwordMatch = await verifyPassword(
+      validatedData.password,
+      operator?.password ?? dummyHash
+    );
+
+    if (!operator || !passwordMatch) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    // Verify password
-    const passwordMatch = await verifyPassword(validatedData.password, operator.password);
-    if (!passwordMatch) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
-    }
-
-    // Check if operator is active
     if (operator.status !== 'active') {
       return NextResponse.json(
         { error: 'Account is not active' },
@@ -71,17 +62,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate token
     const token = generateToken({
       operatorId: operator._id!.toString(),
       email: operator.email,
       tier: operator.tier,
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: 'Login successful',
-        token,
         operator: {
           id: operator._id,
           name: operator.name,
@@ -92,17 +81,22 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
+
+    // Set HttpOnly cookie — JS cannot read this, eliminating XSS token theft
+    response.cookies.set('authToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
     console.error('Login error:', error);
-    return NextResponse.json(
-      { error: 'Login failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }
