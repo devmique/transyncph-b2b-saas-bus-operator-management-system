@@ -21,7 +21,7 @@ A modern SaaS platform for Philippine bus operators to streamline route manageme
 
 ## Technology Stack
 
-- **Frontend**: Next.js 16, React, Tailwind CSS, shadcn/ui, Leafleatjs
+- **Frontend**: Next.js 16, React, Tailwind CSS, shadcn/ui, Leafletjs
 - **Backend**: Next.js API Routes
 - **Database**: MongoDB
 - **Authentication**: JWT stored in HttpOnly cookies with bcrypt password hashing
@@ -94,27 +94,17 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
 ## Security Features
 
-- JWT-based authentication
+- JWT-based authentication with HttpOnly
 - Password hashing with bcryptjs
 - Protected API routes with token verification
 - MongoDB ObjectID validation
 - Input validation with Zod
 
-## Performance Optimizations
-
-- Server-side rendering for public pages
-- Client-side data fetching with caching
-- Optimized database queries with indexes
-- CSS-in-JS with Tailwind for minimal bundle size
-
 ## Future Enhancements
 
-- Real-time GPS tracking for buses
 - SMS notifications for commuters
 - Payment integration for ticketing
-- Analytics dashboard for route optimization
 - Mobile app for drivers and commuters
-- Integration with Google Maps for routing
 - Multi-language support (Filipino, English)
 
 ## Support
