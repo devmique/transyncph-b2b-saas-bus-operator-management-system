@@ -6,7 +6,7 @@ import { MapPin, Search, ArrowLeft, Navigation, Clock, Bus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
 import { Terminal, Route } from '@/types'
-
+import Map from '@/components/Map'
 
 export default function MapPage() {
   const [terminals, setTerminals] = useState<Terminal[]>([])
@@ -15,6 +15,7 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredRoutes, setFilteredRoutes] = useState<Route[]>([])
   const [selectedTerminal, setSelectedTerminal] = useState<Terminal | null>(null)
+  
 
   useEffect(() => {
     fetchData()
@@ -218,54 +219,12 @@ export default function MapPage() {
             )}
 
             {/* Map preview card */}
-            <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden">
-              <div
-                className="w-full h-56 relative flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
-              >
-                {/* Inner grid */}
-                <div
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage:
-                      'repeating-linear-gradient(0deg,transparent,transparent 19px,rgba(255,255,255,0.04) 19px,rgba(255,255,255,0.04) 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,rgba(255,255,255,0.04) 19px,rgba(255,255,255,0.04) 20px)',
-                  }}
-                />
-                {/* Decorative SVG route lines */}
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 224" preserveAspectRatio="none">
-                  <path d="M10,180 Q80,60 150,100 T290,40" stroke="#2563eb" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.5" />
-                  <path d="M10,130 Q90,190 170,130 T295,150" stroke="#3b82f6" strokeWidth="1" fill="none" opacity="0.3" />
-                  {selectedTerminal ? (
-                    <>
-                      <circle cx="150" cy="100" r="6" fill="#2563eb" opacity="0.9" />
-                      <circle cx="150" cy="100" r="12" fill="#2563eb" opacity="0.15" />
-                    </>
-                  ) : (
-                    <>
-                      <circle cx="80" cy="110" r="3" fill="#60a5fa" opacity="0.6" />
-                      <circle cx="150" cy="100" r="3" fill="#60a5fa" opacity="0.6" />
-                      <circle cx="230" cy="65" r="3" fill="#60a5fa" opacity="0.6" />
-                    </>
-                  )}
-                </svg>
-                {/* Label */}
-                <div className="relative text-center">
-                  <MapPin className="w-5 h-5 text-blue-500 mx-auto mb-1.5" />
-                  <p className="text-xs text-slate-400 font-medium">
-                    {selectedTerminal ? selectedTerminal.name : 'Select a terminal'}
-                  </p>
-                  {selectedTerminal && (
-                    <p className="text-xs text-slate-600 mt-0.5">{selectedTerminal.location}</p>
-                  )}
-                </div>
-              </div>
-              <div className="px-4 py-3 border-t border-white/5">
-                <p className="text-xs text-slate-600 font-mono">
-                  {selectedTerminal
-                    ? `${selectedTerminal.lat.toFixed(4)}, ${selectedTerminal.lng.toFixed(4)}`
-                    : 'Live map · Leaflet.js'}
-                </p>
-              </div>
+            <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden h-[420px]">
+              <Map
+                terminals={terminals}
+                selectedTerminal={selectedTerminal}
+                onSelectTerminal={setSelectedTerminal}
+              />
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'
 
 interface OperatorInfo {
   id: string;
@@ -30,7 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [operator, setOperator] = useState<OperatorInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const router = useRouter()
   // Rehydrate from /api/auth/me on mount — cookie is sent automatically
   useEffect(() => {
     fetch('/api/auth/me')
@@ -76,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setOperator(null);
+    router.push('/login')
   };
 
   return (
