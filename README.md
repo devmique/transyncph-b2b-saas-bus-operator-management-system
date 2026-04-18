@@ -24,7 +24,7 @@ A modern SaaS platform for Philippine bus operators to streamline route manageme
 - **Frontend**: Next.js 16, React, Tailwind CSS, shadcn/ui
 - **Backend**: Next.js API Routes
 - **Database**: MongoDB
-- **Authentication**: JWT with bcrypt password hashing
+- **Authentication**: JWT stored in HttpOnly cookies with bcrypt password hashing
 - **Styling**: Tailwind CSS v4 with semantic design tokens
 
 ## Prerequisites

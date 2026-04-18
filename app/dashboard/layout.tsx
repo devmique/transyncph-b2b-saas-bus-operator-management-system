@@ -61,7 +61,7 @@ export default function DashboardLayout({
             </div>
             </Link>
           <span className="font-bold text-sm tracking-tight text-white">
-            Route<span className="text-blue-500">Sync</span> PH
+            Tran<span className="text-blue-500">Sync</span> PH
           </span>
         </div>
         <div className="bg-white/5 border border-white/8 rounded-lg px-3 py-2">

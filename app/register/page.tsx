@@ -90,7 +90,7 @@ export default function RegisterPage() {
             </div>
           </Link>
           <span className="text-white font-bold text-lg tracking-tight">
-            Route<span className="text-blue-500">Sync</span> PH
+            Tran<span className="text-blue-500">Sync</span> PH
           </span>
         </div>
 

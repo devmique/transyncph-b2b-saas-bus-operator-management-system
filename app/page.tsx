@@ -19,7 +19,7 @@ export default function Home() {
             </div>
           
             <span className="font-bold text-base tracking-tight text-white hidden sm:block">
-              Route<span className="text-blue-500">Sync</span> PH
+              Tran<span className="text-blue-500">Sync</span> PH
             </span>
           </div>
 
@@ -296,7 +296,7 @@ export default function Home() {
             </div>
         
             <span className="text-sm font-bold text-slate-400">
-              Route<span className="text-blue-500">Sync</span> PH
+              Tran<span className="text-blue-500">Sync</span> PH
             </span>
           </div>
           <p className="text-xs text-slate-600">© 2025 RouteSync PH. All rights reserved.</p>
