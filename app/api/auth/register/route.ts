@@ -15,7 +15,7 @@ const registerSchema = z.object({
   region: z.string().min(2),
 });
 
-const REGISTER_RATE_LIMIT_MAX_REQUESTS = 3;
+const REGISTER_RATE_LIMIT_MAX_REQUESTS = 6;
 const REGISTER_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {

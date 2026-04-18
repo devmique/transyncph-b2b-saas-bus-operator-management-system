@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContext'
 import FixedBackground from '@/components/FixedBackground'
 import './globals.css'
+import ProgressBar from '@/components/ProgressBar'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -24,6 +25,7 @@ export default function RootLayout({
         <AuthProvider>
           <FixedBackground />
           {children}
+          <ProgressBar />
         </AuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
