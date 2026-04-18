@@ -15,11 +15,30 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredRoutes, setFilteredRoutes] = useState<Route[]>([])
   const [selectedTerminal, setSelectedTerminal] = useState<Terminal | null>(null)
-  
+  const [currentPage, setCurrentPage] = useState(1)
+  const [terminalSearch, setTerminalSearch] = useState('')
+  const [terminalPage, setTerminalPage] = useState(1)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const ROUTES_PER_PAGE = 3
+  const TERMINALS_PER_PAGE = 5
+
+  const filteredTerminals = terminals.filter((t) =>
+    t.name.toLowerCase().includes(terminalSearch.toLowerCase()) ||
+    t.location.toLowerCase().includes(terminalSearch.toLowerCase())
+  )
+  const totalTerminalPages = Math.ceil(filteredTerminals.length / TERMINALS_PER_PAGE)
+  const paginatedTerminals = filteredTerminals.slice(
+    (terminalPage - 1) * TERMINALS_PER_PAGE,
+    terminalPage * TERMINALS_PER_PAGE
+  )
+  
+  const totalPages = Math.ceil(filteredRoutes.length / ROUTES_PER_PAGE)
+  const paginatedRoutes = filteredRoutes.slice(
+    (currentPage - 1) * ROUTES_PER_PAGE,
+    currentPage * ROUTES_PER_PAGE
+  )
+
+  useEffect(() => { fetchData() }, [])
 
   const fetchData = async () => {
     try {
@@ -27,10 +46,8 @@ export default function MapPage() {
         fetch('/api/public/terminals'),
         fetch('/api/public/routes'),
       ])
-
       const terminalsData = await terminalsRes.json()
       const routesData = await routesRes.json()
-
       const safeTerminals = Array.isArray(terminalsData) ? terminalsData : []
       const safeRoutes = Array.isArray(routesData) ? routesData : []
       if (!terminalsRes.ok || !routesRes.ok) {
@@ -56,12 +73,11 @@ export default function MapPage() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
-
+    setCurrentPage(1)
     if (!query.trim()) {
       setFilteredRoutes(routes)
       return
     }
-
     const filtered = routes.filter(
       (route) =>
         route.routeNumber.toLowerCase().includes(query.toLowerCase()) ||
@@ -84,13 +100,7 @@ export default function MapPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
-
-
-          <Button
-            asChild
-            size="sm"
-            className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs"
-          >
+          <Button asChild size="sm" className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs">
             <Link href="/register">Get Started</Link>
           </Button>
         </div>
@@ -102,9 +112,7 @@ export default function MapPage() {
           <span className="inline-block text-blue-500 text-xs font-mono font-medium tracking-widest uppercase bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded mb-4">
             Route Finder
           </span>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-6">
-            Find your route
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-6">Find your route</h1>
           <InputField
             label="Search Routes"
             name="routeSearch"
@@ -119,9 +127,11 @@ export default function MapPage() {
 
       {/* ── MAIN CONTENT ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* ── GRID: routes + terminals ── */}
         <div className="grid lg:grid-cols-3 gap-8">
 
-          {/* ── LEFT: ROUTES LIST ── */}
+          {/* ── LEFT: ROUTES ── */}
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold text-slate-100">
@@ -144,55 +154,99 @@ export default function MapPage() {
                 <p className="text-sm text-slate-500">No routes found. Try a different search.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {filteredRoutes.map((route) => (
-                  <div
-                    key={route._id}
-                    className="group bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl px-5 py-4 hover:border-blue-600/40 hover:bg-slate-900/80 transition cursor-pointer"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-xl font-bold text-blue-500 tracking-tight">
-                            {route.routeNumber}
-                          </span>
-                          <span className="text-xs font-mono bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
-                            {route.distance} km
-                          </span>
+              <>
+                <div className="space-y-3">
+                  {paginatedRoutes.map((route) => (
+                    <div
+                      key={route._id}
+                      className="group bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl px-5 py-4 hover:border-blue-600/40 hover:bg-slate-900/80 transition cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-xl font-bold text-blue-500 tracking-tight">
+                              {route.routeNumber}
+                            </span>
+                            <span className="text-xs font-mono bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+                              {route.distance} km
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-300 font-medium mb-1.5">
+                            {route.startPoint}
+                            <span className="text-slate-600 mx-2">→</span>
+                            {route.endPoint}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <Clock className="w-3 h-3" />
+                            {route.estimatedTime}
+                          </div>
                         </div>
-                        <p className="text-sm text-slate-300 font-medium mb-1.5">
-                          {route.startPoint}
-                          <span className="text-slate-600 mx-2">→</span>
-                          {route.endPoint}
-                        </p>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <Clock className="w-3 h-3" />
-                          {route.estimatedTime}
+                        <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center shrink-0 group-hover:bg-blue-600/10 group-hover:border-blue-600/20 transition">
+                          <Navigation className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition" />
                         </div>
-                      </div>
-                      <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center shrink-0 group-hover:bg-blue-600/10 group-hover:border-blue-600/20 transition">
-                        <Navigation className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition" />
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                    <p className="text-xs text-slate-500">
+                      Page {currentPage} of {totalPages} · {filteredRoutes.length} routes
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="h-8 px-3 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="h-8 px-3 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
 
-          {/* ── RIGHT: TERMINALS + MAP ── */}
-          <div>
-            <h2 className="text-lg font-semibold text-slate-100 mb-5">Terminals</h2>
-
-            {loading ? (
+         {/* ── RIGHT: TERMINALS ── */}
+        <div>
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">Terminals</h2>
+                  
+          {/* Search */}
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search terminals..."
+              value={terminalSearch}
+              onChange={(e) => { setTerminalSearch(e.target.value); setTerminalPage(1) }}
+              className="w-full pl-8 pr-3 h-9 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-600 transition"
+            />
+          </div>
+                  
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-16 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : filteredTerminals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 bg-slate-900/40 border border-white/5 rounded-xl">
+              <MapPin className="w-6 h-6 text-slate-700 mb-2" />
+              <p className="text-xs text-slate-500">No terminals found.</p>
+            </div>
+          ) : (
+            <>
               <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2 mb-6">
-                {terminals.map((terminal) => (
+                {paginatedTerminals.map((terminal) => (
                   <button
                     key={terminal._id}
                     onClick={() => setSelectedTerminal(terminal)}
@@ -208,7 +262,7 @@ export default function MapPage() {
                     <div>
                       <p className={`text-sm font-medium ${
                         selectedTerminal?._id === terminal._id ? 'text-blue-300' : 'text-slate-300'
-                      }`}>
+                              }`}>
                         {terminal.name}
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">{terminal.location}</p>
@@ -216,19 +270,51 @@ export default function MapPage() {
                   </button>
                 ))}
               </div>
-            )}
 
-            {/* Map preview card */}
-            <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden h-[420px]">
-              <Map
-                terminals={terminals}
-                selectedTerminal={selectedTerminal}
-                onSelectTerminal={setSelectedTerminal}
-              />
-            </div>
+              {totalTerminalPages > 1 && (
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+                  <p className="text-xs text-slate-500">{terminalPage}/{totalTerminalPages}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setTerminalPage((p) => Math.max(1, p - 1))}
+                      disabled={terminalPage === 1}
+                      className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setTerminalPage((p) => Math.min(totalTerminalPages, p + 1))}
+                      disabled={terminalPage === totalTerminalPages}
+                      className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        </div>
+
+        {/* ── MAP: full width below grid ── */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-slate-100 mb-4">
+            Live Map
+            {selectedTerminal && (
+              <span className="ml-2 text-xs font-mono text-slate-500">· {selectedTerminal.name}</span>
+            )}
+          </h2>
+          <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden h-[560px]">
+            <Map
+              terminals={terminals}
+              selectedTerminal={selectedTerminal}
+              onSelectTerminal={setSelectedTerminal}
+            />
           </div>
         </div>
-      </div>
+
+      </div> {/* end main content */}
 
       {/* ── CTA ── */}
       <section className="border-t border-white/5 py-16 mt-8">
@@ -254,10 +340,9 @@ export default function MapPage() {
       <footer className="border-t border-white/5 bg-slate-950/80 backdrop-blur-sm py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-          
             <div className="cursor-pointer w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
               <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <Bus/>
+                <Bus />
               </svg>
             </div>
             <span className="text-sm font-bold text-slate-400">
@@ -271,6 +356,7 @@ export default function MapPage() {
           </div>
         </div>
       </footer>
+
     </div>
   )
 }
