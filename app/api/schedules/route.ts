@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('schedules').insertOne({
       ...parsed.data,
-      routeId: new ObjectId(parsed.data.routeId),  // ← convert
+      routeId: new ObjectId(parsed.data.routeId),  
       operatorId: payload.operatorId,
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       // 7. Shape the final output
       {
         $project: {
-          operatorObjectId: 0,  // hide temp field
+      
           routeNumber: 1,
           startPoint: 1,
           endPoint: 1,

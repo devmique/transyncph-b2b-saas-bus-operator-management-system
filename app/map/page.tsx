@@ -73,21 +73,22 @@ export default function MapPage() {
     }
   }
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query)
-    setCurrentPage(1)
-    if (!query.trim()) {
-      setFilteredRoutes(routes)
-      return
-    }
-    const filtered = routes.filter(
-      (route) =>
-        route.routeNumber.toLowerCase().includes(query.toLowerCase()) ||
-        route.startPoint.toLowerCase().includes(query.toLowerCase()) ||
-        route.endPoint.toLowerCase().includes(query.toLowerCase())
-    )
-    setFilteredRoutes(filtered)
+
+const handleSearch = (query: string) => {
+  setSearchQuery(query)
+  setCurrentPage(1)
+  setExpandedRouteId(null)  
+  if (!query.trim()) {
+    setFilteredRoutes(routes)
+    return
   }
+  const q = query.toLowerCase()
+  setFilteredRoutes(routes.filter((r) =>
+    r.routeNumber.toLowerCase().includes(q) ||
+    r.startPoint.toLowerCase().includes(q) ||
+    r.endPoint.toLowerCase().includes(q)
+  ))
+}
     
   const toggleExpand = (id: string) =>
     setExpandedRouteId((prev) => (prev === id ? null : id))
