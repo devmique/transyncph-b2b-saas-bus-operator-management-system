@@ -178,7 +178,7 @@ const handleSearch = (query: string) => {
                         {/* ── ROUTE HEADER (always visible) ── */}
                         <button
                           onClick={() => route._id && toggleExpand(route._id)}
-                          className="w-full text-left px-5 py-4"
+                          className="cursor-pointer w-full text-left px-5 py-4"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
@@ -340,7 +340,7 @@ const handleSearch = (query: string) => {
                   <button
                     key={terminal._id}
                     onClick={() => setSelectedTerminal(terminal)}
-                    className={`w-full text-left px-4 py-3 rounded-xl border transition flex items-start gap-3 ${
+                    className={`cursor-pointer w-full text-left px-4 py-3 rounded-xl border transition flex items-start gap-3 ${
                       selectedTerminal?._id === terminal._id
                         ? 'bg-blue-600/10 border-blue-600/40'
                         : 'bg-slate-900/60 border-white/8 hover:border-blue-600/30 hover:bg-slate-900/80'
