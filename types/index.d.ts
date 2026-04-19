@@ -19,24 +19,32 @@ export interface OperatorProfile {
     createdAt?: Date
   }
 
- export interface Route {
+  export interface Route {
     _id?: string
     routeNumber: string
     startPoint: string
     endPoint: string
     distance: number
     estimatedTime: string
+    companyName?: string      
+    schedules?: Schedule[]
   }
-  
   export interface Schedule {
     _id?: string
-    routeNumber: string
+    routeId: string                  
+    fare: number                   
     departureTime: string
     arrivalTime: string
     driverName: string
     vehicleNumber: string
     status: 'active' | 'inactive'
+    route?: {                      
+      routeNumber: string
+      startPoint: string
+      endPoint: string
+    }
   }
+  
 
   export interface Terminal {
     _id?: string

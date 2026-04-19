@@ -6,9 +6,10 @@ import { z } from 'zod'
 import { getPayload } from '@/lib/auth'
 
 const scheduleSchema = z.object({
-  routeNumber: z.string().min(1).max(50),
+  routeId: z.string().refine(v => ObjectId.isValid(v), 'Invalid route ID'),
   departureTime: z.string().min(1).max(20),
   arrivalTime: z.string().min(1).max(20),
+  fare: z.number().positive(),              
   driverName: z.string().min(1).max(120),
   vehicleNumber: z.string().min(1).max(50),
   status: z.enum(['active', 'inactive']),
@@ -26,9 +27,19 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDatabase()
-    const schedules = await db.collection('schedules')
-      .find({ operatorId: payload.operatorId })
-      .toArray()
+
+    const schedules = await db.collection('schedules').aggregate([
+      { $match: { operatorId: payload.operatorId } },
+      {
+        $lookup: {
+          from: 'routes',
+          localField: 'routeId',
+          foreignField: '_id',
+          as: 'route'
+        }
+      },
+      { $unwind: { path: '$route', preserveNullAndEmptyArrays: true } }
+    ]).toArray()
 
     return NextResponse.json(schedules)
   } catch (error) {
@@ -56,6 +67,7 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('schedules').insertOne({
       ...parsed.data,
+      routeId: new ObjectId(parsed.data.routeId),  // ← convert
       operatorId: payload.operatorId,
       createdAt: new Date(),
       updatedAt: new Date(),
