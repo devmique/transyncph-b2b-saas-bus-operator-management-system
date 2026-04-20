@@ -134,9 +134,9 @@ export default function MapPage() {
       <section className="border-b border-white/5 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <span className="inline-block text-blue-500 text-xs font-mono font-medium tracking-widest uppercase bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded mb-4">
-            Route Finder
+            Route and Schedule Finder
           </span>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-6">Find your route</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-6">Find your route and trip schedule</h1>
           <InputField
             label="Search Routes"
             name="routeSearch"

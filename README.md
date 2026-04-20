@@ -15,7 +15,7 @@ A modern SaaS platform for Philippine bus operators to streamline route manageme
 
 ### For Commuters (Public Map)
 
-- **Route Finder**: Search and discover bus routes by route number, start point, or destination
+- **Route Finder**: Search and discover bus routes and trip schedules and information by route number, start point, or destination
 - **Terminal Locator**: Find nearby terminals and get location information
 - **Service Visibility**: View available routes and key operational details
 
