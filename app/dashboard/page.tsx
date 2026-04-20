@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bus, Users, MapPin, TrendingUp } from 'lucide-react'
+import { Bus, MapPin, TrendingUp } from 'lucide-react'
 import { safeDateToMs, formatTimeAgo, formatPHPCompact } from '@/utils/format'
 import { ActivityItem, AnyDoc } from '@/types'
 
@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const [statsValues, setStatsValues] = useState({
     activeRoutes: '—',
     totalVehicles: '—',
-    teamMembers: '—',
+    terminals: '—',
     monthlyRevenue: '—',
   })
 
@@ -43,9 +43,9 @@ export default function DashboardPage() {
         border: 'border-emerald-500/20',
       },
       {
-        key: 'teamMembers',
-        label: 'Team Members',
-        icon: Users,
+        key: 'terminals',
+        label: 'Terminals',
+        icon: MapPin,
         accent: 'text-violet-400',
         bg: 'bg-violet-500/10',
         border: 'border-violet-500/20',
@@ -132,14 +132,16 @@ export default function DashboardPage() {
           const tsMs = safeDateToMs(s.updatedAt ?? s.createdAt)
           if (tsMs === null) continue
 
-          const routeNumber = String(s.routeNumber ?? '—')
+           const routeLabel = s.route?.routeNumber
+            ? `${s.route.routeNumber} · ${s.route.startPoint} → ${s.route.endPoint}`
+            : '—'
           const dep = s.departureTime ? String(s.departureTime) : ''
           const arr = s.arrivalTime ? String(s.arrivalTime) : ''
           const when = dep && arr ? ` (${dep}→${arr})` : ''
 
           candidates.push({
-            key: `schedule-${String(s._id ?? `${routeNumber}-${tsMs}`)}-${tsMs}`,
-            label: `Schedule updated: ${routeNumber}${when}`,
+            key: `schedule-${String(s._id ?? tsMs)}-${tsMs}`,
+            label: `Schedule updated: ${routeLabel}${when}`,
             time: formatTimeAgo(tsMs),
             tsMs,
           })
@@ -164,8 +166,8 @@ export default function DashboardPage() {
 
         // ---- Stats from real data ----
         const activeSchedules = schedules.filter((s) => s?.status === 'active')
-        const activeRouteNumbers = new Set(
-          activeSchedules.map((s) => String(s.routeNumber ?? '')).filter(Boolean),
+        const activeRouteIds = new Set(
+          activeSchedules.map((s) => String(s.routeId ?? '')).filter(Boolean),
         )
 
         const allVehicleNumbers = new Set(schedules.map((s) => String(s.vehicleNumber ?? '')).filter(Boolean))
@@ -173,7 +175,6 @@ export default function DashboardPage() {
           activeSchedules.map((s) => String(s.vehicleNumber ?? '')).filter(Boolean),
         )
 
-        const allDrivers = new Set(schedules.map((s) => String(s.driverName ?? '')).filter(Boolean))
 
         const totalSchedules = schedules.length
         const onTimeRate = totalSchedules ? (activeSchedules.length / totalSchedules) * 100 : 0
@@ -183,7 +184,7 @@ export default function DashboardPage() {
           : 0
 
         // Best-effort monthly revenue: sum `fare` on active routes if present.
-        const activeRoutes = routes.filter((r) => activeRouteNumbers.has(String(r.routeNumber ?? '')))
+        const activeRoutes = routes.filter((r) => activeRouteIds.has(String(r._id ?? '')))
         const fareNumbers = activeRoutes
           .map((r) => r.fare)
           .filter((v) => typeof v === 'number' && Number.isFinite(v)) as number[]
@@ -192,12 +193,11 @@ export default function DashboardPage() {
 
         if (!cancelled) {
           setStatsValues({
-            activeRoutes: String(activeRouteNumbers.size),
+            activeRoutes: String(activeRouteIds.size),
             totalVehicles: String(allVehicleNumbers.size),
-            teamMembers: String(allDrivers.size),
+            terminals: String(terminals.length),
             monthlyRevenue,
           })
-
           setQuickStatsValues({
             onTimeRate: `${onTimeRate.toFixed(1)}%`,
             fleetUtilization: `${fleetUtilization.toFixed(1)}%`,
