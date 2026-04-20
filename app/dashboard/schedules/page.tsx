@@ -5,6 +5,7 @@ import { Plus, Trash2, Edit2, Clock } from 'lucide-react'
 import { Route, Schedule } from '@/types'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
+import { to12Hour, to24Hour } from '@/utils/format'
 
 const empty: Schedule = {
   routeId: '',
@@ -154,22 +155,22 @@ export default function SchedulesPage() {
 
             {/* Times */}
             <div className="grid md:grid-cols-2 gap-4">
-              <InputField
-                label="Departure Time"
-                name="departureTime"
-                type="time"
-                value={formData.departureTime}
-                onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-                required
-              />
-              <InputField
-                label="Arrival Time"
-                name="arrivalTime"
-                type="time"
-                value={formData.arrivalTime}
-                onChange={(e) => setFormData({ ...formData, arrivalTime: e.target.value })}
-                required
-              />
+                 <InputField
+                  label="Departure Time"
+                  name="departureTime"
+                  type="time"
+                  value={to24Hour(formData.departureTime)}   // convert to 24h for the input
+                  onChange={(e) => setFormData({ ...formData, departureTime: to12Hour(e.target.value) })}
+                  required
+                />
+                <InputField
+                  label="Arrival Time"
+                  name="arrivalTime"
+                  type="time"
+                  value={to24Hour(formData.arrivalTime)}     // convert to 24h for the input
+                  onChange={(e) => setFormData({ ...formData, arrivalTime: to12Hour(e.target.value) })}
+                  required
+                />
             </div>
 
             {/* Driver + Vehicle */}

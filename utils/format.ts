@@ -36,3 +36,27 @@ export function safeDateToMs(value: unknown): number | null {
       return `₱${Math.round(value).toLocaleString('en-PH')}`
     }
   }
+
+// "14:30" → "02:30 PM"
+export function to12Hour(time24: string): string {
+  if (!time24) return ''
+  const [hStr, mStr] = time24.split(':')
+  let h = parseInt(hStr, 10)
+  const m = mStr ?? '00'
+  const period = h >= 12 ? 'PM' : 'AM'
+  h = h % 12 || 12
+  return `${String(h).padStart(2, '0')}:${m} ${period}`
+}
+
+// "02:30 PM" → "14:30" (for the time input value)
+export function to24Hour(time12: string): string {
+  if (!time12) return ''
+  const match = time12.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (!match) return time12 // already 24h or raw input
+  let h = parseInt(match[1], 10)
+  const m = match[2]
+  const period = match[3].toUpperCase()
+  if (period === 'PM' && h !== 12) h += 12
+  if (period === 'AM' && h === 12) h = 0
+  return `${String(h).padStart(2, '0')}:${m}`
+}

@@ -22,7 +22,7 @@ const ANNOUNCEMENT_STYLES = {
 
 const ROUTES_PER_PAGE    = 3
 const TERMINALS_PER_PAGE = 5
-
+const ANNOUNCEMENTS_PER_PAGE = 3
 export default function MapPage() {
   const [terminals, setTerminals]                       = useState<Terminal[]>([])
   const [routes, setRoutes]                             = useState<Route[]>([])
@@ -36,21 +36,32 @@ export default function MapPage() {
   const [currentPage, setCurrentPage]                   = useState(1)
   const [terminalSearch, setTerminalSearch]             = useState('')
   const [terminalPage, setTerminalPage]                 = useState(1)
-
+  const [announcementPage, setAnnouncementPage] = useState(1)
   
   const filteredTerminals = terminals.filter((t) =>
     t.name.toLowerCase().includes(terminalSearch.toLowerCase()) ||
     t.location.toLowerCase().includes(terminalSearch.toLowerCase())
   )
+
+  //terminal pagination
   const totalTerminalPages = Math.ceil(filteredTerminals.length / TERMINALS_PER_PAGE)
   const paginatedTerminals = filteredTerminals.slice(
     (terminalPage - 1) * TERMINALS_PER_PAGE,
     terminalPage * TERMINALS_PER_PAGE
   )
+
+  //routes pagination
   const totalPages    = Math.ceil(filteredRoutes.length / ROUTES_PER_PAGE)
   const paginatedRoutes = filteredRoutes.slice(
     (currentPage - 1) * ROUTES_PER_PAGE,
     currentPage * ROUTES_PER_PAGE
+  )
+
+  //announcements paginaton
+  const totalAnnouncementPages = Math.ceil(announcements.length / ANNOUNCEMENTS_PER_PAGE)
+  const paginatedAnnouncements = announcements.slice(
+    (announcementPage - 1) * ANNOUNCEMENTS_PER_PAGE,
+    announcementPage * ANNOUNCEMENTS_PER_PAGE
   )
 
   useEffect(() => { fetchData() }, [])
@@ -62,23 +73,16 @@ export default function MapPage() {
         fetch('/api/public/routes'),
         fetch('/api/public/announcements'),
       ])
-      const [terminalsData, routesData, announcementsData] = await Promise.all([
-        terminalsRes.json(),
-        routesRes.json(),
-        announcementsRes.json(),
-      ])
-
-      if (!terminalsRes.ok || !routesRes.ok || !announcementsRes.ok) {
-        console.error('API error', {
-          terminalsStatus:    terminalsRes.status,
-          routesStatus:       routesRes.status,
-          announcementsStatus: announcementsRes.status,
-          terminalsError:    Array.isArray(terminalsData)    ? null : terminalsData,
-          routesError:       Array.isArray(routesData)       ? null : routesData,
-          announcementsError: Array.isArray(announcementsData) ? null : announcementsData,
-        })
-      }
-
+  
+      // parse each independently — one 404/500 won't crash the others
+      const terminalsData     = terminalsRes.ok     ? await terminalsRes.json()     : []
+      const routesData        = routesRes.ok        ? await routesRes.json()        : []
+      const announcementsData = announcementsRes.ok ? await announcementsRes.json() : []
+  
+      if (!terminalsRes.ok)     console.error('terminals API:', terminalsRes.status)
+      if (!routesRes.ok)        console.error('routes API:', routesRes.status)
+      if (!announcementsRes.ok) console.error('announcements API:', announcementsRes.status)
+  
       setTerminals(Array.isArray(terminalsData) ? terminalsData : [])
       setRoutes(Array.isArray(routesData) ? routesData : [])
       setFilteredRoutes(Array.isArray(routesData) ? routesData : [])
@@ -146,51 +150,75 @@ export default function MapPage() {
       </section>
 
       {/* ── ANNOUNCEMENTS ── */}
-      {!loading && announcements.length > 0 && (
-        <div className="border-b border-white/5 bg-slate-950/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <p className="text-xs font-medium tracking-wider uppercase text-slate-500 mb-3">
-              Announcements
-              <span className="ml-2 font-mono text-slate-600">({announcements.length})</span>
-            </p>
-            <div className="space-y-2">
-              {announcements.map((a) => {
-                const style = ANNOUNCEMENT_STYLES[a.type]
-                const Icon  = style.icon
-                return (
-                  <button
-                    key={a._id}
-                    onClick={() => setSelectedAnnouncement(a)}
-                    className={`cursor-pointer w-full text-left flex items-start gap-3 px-4 py-3 rounded-xl border ${style.bg} ${style.border} hover:opacity-80 transition`}
-                  >
-                    <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.text}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <span className={`text-xs font-semibold ${style.text}`}>{a.title}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded border ${style.bg} ${style.border} ${style.text}`}>
-                          {style.badge}
-                        </span>
-                        {a.companyName && (
-                          <span className="flex items-center gap-1 text-xs text-slate-500">
-                            <Building2 className="w-3 h-3" />
-                            {a.companyName}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-400 truncate">{a.message}</p>
-                    </div>
-                    <span className="text-xs text-slate-600 shrink-0 mt-0.5">
-                      {a.createdAt
-                        ? new Date(a.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
-                        : ''}
+{!loading && announcements.length > 0 && (
+  <div className="border-b border-white/5 bg-slate-950/40">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <p className="text-xs font-medium tracking-wider uppercase text-slate-500 mb-3">
+        Announcements
+        <span className="ml-2 font-mono text-slate-600">({announcements.length})</span>
+      </p>
+      <div className="space-y-2">
+        {paginatedAnnouncements.map((a) => {
+          const style = ANNOUNCEMENT_STYLES[a.type]
+          const Icon  = style.icon
+          return (
+            <button
+              key={a._id}
+              onClick={() => setSelectedAnnouncement(a)}
+              className={`cursor-pointer w-full text-left flex items-start gap-3 px-4 py-3 rounded-xl border ${style.bg} ${style.border} hover:opacity-80 transition`}
+            >
+              <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.text}`} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                  <span className={`text-xs font-semibold ${style.text}`}>{a.title}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded border ${style.bg} ${style.border} ${style.text}`}>
+                    {style.badge}
+                  </span>
+                  {a.companyName && (
+                    <span className="flex items-center gap-1 text-xs text-slate-500">
+                      <Building2 className="w-3 h-3" />
+                      {a.companyName}
                     </span>
-                  </button>
-                )
-              })}
-            </div>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 truncate">{a.message}</p>
+              </div>
+              <span className="text-xs text-slate-600 shrink-0 mt-0.5">
+                {a.createdAt
+                  ? new Date(a.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+                  : ''}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {totalAnnouncementPages > 1 && (
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+          <p className="text-xs text-slate-500">
+            Page {announcementPage} of {totalAnnouncementPages} · {announcements.length} announcements
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAnnouncementPage((p) => Math.max(1, p - 1))}
+              disabled={announcementPage === 1}
+              className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setAnnouncementPage((p) => Math.min(totalAnnouncementPages, p + 1))}
+              disabled={announcementPage === totalAnnouncementPages}
+              className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
+    </div>
+  </div>
+)}
 
       {/* ── ANNOUNCEMENT MODAL ── */}
       {selectedAnnouncement && (() => {
