@@ -103,7 +103,7 @@ export async function PUT(request: NextRequest) {
 
     await db.collection('schedules').updateOne(
       { _id: new ObjectId(id), operatorId: payload.operatorId },
-      { $set: { ...scheduleData, updatedAt: new Date() } }
+      { $set: { ...scheduleData, routeId: new ObjectId(scheduleData.routeId), updatedAt: new Date() } }
     )
 
     return NextResponse.json({ id, ...scheduleData })
