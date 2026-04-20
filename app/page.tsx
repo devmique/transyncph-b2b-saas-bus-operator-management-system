@@ -198,13 +198,13 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-5">
             {[
               {
-                name: 'Starter', price: '₱4,999', period: '/month',
+                name: 'Starter', price: '₱0', period: '/month',
                 description: 'Perfect for small operators',
                 features: ['Up to 10 vehicles', 'Basic route management', '5 team members', 'Email support'],
                 cta: 'Get Started', highlighted: false,
               },
               {
-                name: 'Professional', price: '₱12,999', period: '/month',
+                name: 'Professional', price: '₱0', period: '/month',
                 description: 'For growing bus companies',
                 features: ['Up to 50 vehicles', 'Advanced analytics', '25 team members', 'Priority support', 'API access'],
                 cta: 'Get Started', highlighted: true,
@@ -240,7 +240,7 @@ export default function Home() {
                   <span className="text-sm text-slate-500 ml-1.5">{plan.period}</span>
                 </div>
                 <Link
-                  href={plan.name !== 'Enterprise' ? '/register' : '/contact'}
+                  href={plan.name !== 'Enterprise' ? '/register' : '/'}
                   className={`h-10 flex items-center justify-center text-sm font-semibold rounded-lg transition mb-7 ${
                     plan.highlighted
                       ? 'bg-blue-600 hover:bg-blue-700 text-white'

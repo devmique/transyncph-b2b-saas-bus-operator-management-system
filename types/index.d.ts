@@ -17,6 +17,8 @@ export interface OperatorProfile {
     type: 'info' | 'warning' | 'alert'
     affectedRoutes: string[]
     createdAt?: Date
+    companyName?: string  
+
   }
 
   export interface Route {

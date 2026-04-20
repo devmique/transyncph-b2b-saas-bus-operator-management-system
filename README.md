@@ -1,6 +1,6 @@
 # TranSync PH - Bus Operator Management System
 
-A modern SaaS platform for Philippine bus operators to streamline route management, scheduling, and passenger communication.
+A modern SaaS platform for Philippine bus operators to streamline route management, scheduling, and passenger notifications.
 
 ## Features
 
