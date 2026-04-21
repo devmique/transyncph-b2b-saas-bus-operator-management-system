@@ -552,7 +552,7 @@ export default function MapPage() {
             Are you a bus operator?
           </h2>
           <p className="text-slate-500 font-light mb-8">
-            Join RouteSync PH and reach more commuters with our digital route management platform.
+            Join TranSync PH and reach more commuters with our digital route management platform.
           </p>
           <Button asChild className="h-11 px-7 bg-blue-600 hover:bg-blue-700 text-white">
             <Link href="/register">
