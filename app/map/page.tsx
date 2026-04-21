@@ -573,10 +573,10 @@ export default function MapPage() {
               <Bus className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="text-sm font-bold text-slate-400">
-              Route<span className="text-blue-500">Sync</span> PH
+              Tran<span className="text-blue-500">Sync</span> PH
             </span>
           </div>
-          <p className="text-xs text-slate-600">© 2025 RouteSync PH. All rights reserved.</p>
+          <p className="text-xs text-slate-600">© 2025 TranSync PH. All rights reserved.</p>
           <div className="flex items-center gap-5 text-xs text-slate-600">
             <Link href="/privacy" className="hover:text-slate-400 transition">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-slate-400 transition">Terms of Service</Link>
