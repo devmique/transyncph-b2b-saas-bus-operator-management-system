@@ -18,7 +18,7 @@ export default function DashboardPage() {
   })
 
   const [quickStatsValues, setQuickStatsValues] = useState({
-    onTimeRate: '—',
+    activeScheduleRate: '—',
     fleetUtilization: '—',
     avgPassengersPerBus: '—',
   })
@@ -63,7 +63,7 @@ export default function DashboardPage() {
   
 
   const quickMeta = [
-      { key: 'onTimeRate', label: 'On-time Rate', accent: 'text-emerald-400' },
+      { key: 'activeScheduleRate', label: 'Active Schedule Rate', accent: 'text-emerald-400' },
       { key: 'fleetUtilization', label: 'Fleet Utilization', accent: 'text-blue-400' },
       { key: 'avgPassengersPerBus', label: 'Avg Passengers/Bus', accent: 'text-violet-400' },
     ]
@@ -177,7 +177,7 @@ export default function DashboardPage() {
 
 
         const totalSchedules = schedules.length
-        const onTimeRate = totalSchedules ? (activeSchedules.length / totalSchedules) * 100 : 0
+        const activeScheduleRate = totalSchedules ? (activeSchedules.length / totalSchedules) * 100 : 0
 
         const fleetUtilization = allVehicleNumbers.size
           ? (activeVehicleNumbers.size / allVehicleNumbers.size) * 100
@@ -199,7 +199,7 @@ export default function DashboardPage() {
             monthlyRevenue,
           })
           setQuickStatsValues({
-            onTimeRate: `${onTimeRate.toFixed(1)}%`,
+            activeScheduleRate: `${ activeScheduleRate.toFixed(1)}%`,
             fleetUtilization: `${fleetUtilization.toFixed(1)}%`,
             avgPassengersPerBus: '—',
           })
