@@ -30,6 +30,10 @@ export interface OperatorProfile {
     estimatedTime: string
     companyName?: string      
     schedules?: Schedule[]
+    startTerminalId?: string
+    endTerminalId?: string
+    startTerminal?: { _id: string; name: string; lat: number; lng: number }
+    endTerminal?: { _id: string; name: string; lat: number; lng: number }
   }
   export interface Schedule {
     _id?: string

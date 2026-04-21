@@ -1,12 +1,10 @@
-// components/Map.tsx
 'use client'
 
 import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { Terminal } from '@/types'
+import { Terminal, Route } from '@/types'
 
-// Fix default marker icons broken by webpack
 const icon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -16,25 +14,22 @@ const icon = L.icon({
   popupAnchor: [1, -34],
 })
 
-// Fly to selected terminal when it changes
 function FlyTo({ terminal }: { terminal: Terminal | null }) {
   const map = useMap()
   useEffect(() => {
-    if (terminal) {
-      map.flyTo([terminal.lat, terminal.lng], 15, { duration: 1.2 })
-    }
+    if (terminal) map.flyTo([terminal.lat, terminal.lng], 15, { duration: 1.2 })
   }, [terminal, map])
   return null
 }
 
 interface MapProps {
   terminals: Terminal[]
+  routes?: Route[]
   selectedTerminal: Terminal | null
   onSelectTerminal: (terminal: Terminal) => void
 }
 
-export default function Map({ terminals, selectedTerminal, onSelectTerminal }: MapProps) {
-  // Center on Philippines
+export default function Map({ terminals, routes = [], selectedTerminal, onSelectTerminal }: MapProps) {
   const defaultCenter: [number, number] = [12.8797, 121.7740]
 
   return (
@@ -49,6 +44,37 @@ export default function Map({ terminals, selectedTerminal, onSelectTerminal }: M
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
       <FlyTo terminal={selectedTerminal} />
+
+      {/* ── ROUTE POLYLINES ── */}
+      {routes.map((route) => {
+        const start = route.startTerminal
+        const end   = route.endTerminal
+        if (!start || !end) return null
+        return (
+          <Polyline
+            key={route._id}
+            positions={[
+              [start.lat, start.lng],
+              [end.lat,   end.lng],
+            ]}
+            pathOptions={{
+              color: '#3b82f6',
+              weight: 3,
+              opacity: 0.7,
+              dashArray: '6 4',
+            }}
+          >
+            <Popup>
+              <div className="text-sm font-medium">{route.routeNumber}</div>
+              <div className="text-xs text-slate-500">
+                {route.startPoint} → {route.endPoint}
+              </div>
+            </Popup>
+          </Polyline>
+        )
+      })}
+
+      {/* ── TERMINAL MARKERS ── */}
       {terminals.map((terminal) => (
         <Marker
           key={terminal._id}

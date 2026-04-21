@@ -2,21 +2,35 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, MapPin } from 'lucide-react'
-import { Route } from '@/types'
+import { Route, Terminal } from '@/types'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
 
-const empty: Route = { routeNumber: '', startPoint: '', endPoint: '', distance: 0, estimatedTime: '' }
+const empty: Route = {
+  routeNumber: '',
+  startPoint: '',
+  endPoint: '',
+  distance: 0,
+  estimatedTime: '',
+  startTerminalId: '',
+  endTerminalId: '',
+}
 
 export default function RoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([])
+  const [terminals, setTerminals] = useState<Terminal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [formData, setFormData] = useState<Route>(empty)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  useEffect(() => { fetchRoutes() }, [])
+  useEffect(() => {
+    fetchRoutes()
+    fetch('/api/terminals')
+      .then(r => r.json())
+      .then(d => setTerminals(Array.isArray(d) ? d : []))
+  }, [])
 
   const fetchRoutes = async () => {
     try {
@@ -25,19 +39,26 @@ export default function RoutesPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to fetch routes')
       setRoutes(Array.isArray(data) ? data : [])
-    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to fetch routes') }
-    finally { setLoading(false) }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to fetch routes')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const cleanedRouteNumber = formData.routeNumber.trim()
-    const cleanedStartPoint = formData.startPoint.trim()
-    const cleanedEndPoint = formData.endPoint.trim()
+    const cleanedRouteNumber   = formData.routeNumber.trim()
+    const cleanedStartPoint    = formData.startPoint.trim()
+    const cleanedEndPoint      = formData.endPoint.trim()
     const cleanedEstimatedTime = formData.estimatedTime.trim()
-    const hasValidDistance = Number.isFinite(formData.distance) && formData.distance > 0
+    const hasValidDistance     = Number.isFinite(formData.distance) && formData.distance > 0
 
-    if (!cleanedRouteNumber || !cleanedStartPoint || !cleanedEndPoint || !cleanedEstimatedTime || !hasValidDistance) return
+    if (
+      !cleanedRouteNumber || !cleanedStartPoint || !cleanedEndPoint ||
+      !cleanedEstimatedTime || !hasValidDistance ||
+      !formData.startTerminalId || !formData.endTerminalId
+    ) return
 
     try {
       setError('')
@@ -46,16 +67,20 @@ export default function RoutesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          routeNumber: cleanedRouteNumber,
-          startPoint: cleanedStartPoint,
-          endPoint: cleanedEndPoint,
+          routeNumber:   cleanedRouteNumber,
+          startPoint:    cleanedStartPoint,
+          endPoint:      cleanedEndPoint,
           estimatedTime: cleanedEstimatedTime,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save route')
-      if (res.ok) { setFormData(empty); setFormOpen(false); fetchRoutes() }
-    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to save route') }
+      setFormData(empty)
+      setFormOpen(false)
+      fetchRoutes()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save route')
+    }
   }
 
   const confirmDelete = async () => {
@@ -66,9 +91,14 @@ export default function RoutesPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to delete route')
       fetchRoutes()
-    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to delete route') }
-    finally { setDeletingId(null) }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete route')
+    } finally {
+      setDeletingId(null)
+    }
   }
+
+  const selectClass = "w-full h-10 px-3.5 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-blue-600 transition"
 
   return (
     <div>
@@ -85,12 +115,14 @@ export default function RoutesPage() {
           Add Route
         </Button>
       </div>
+
       {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
 
       {formOpen && (
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-6 mb-6">
           <h2 className="text-base font-semibold text-slate-100 mb-5">Create New Route</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+
             <div className="grid md:grid-cols-2 gap-4">
               <InputField
                 label="Route Number"
@@ -110,24 +142,62 @@ export default function RoutesPage() {
                 required
               />
             </div>
+
+            {/* Terminal dropdowns — drive startPoint/endPoint automatically */}
             <div className="grid md:grid-cols-2 gap-4">
-              <InputField
-                label="Start Point"
-                name="startPoint"
-                placeholder="e.g., Manila Terminal"
-                value={formData.startPoint}
-                onChange={(e) => setFormData({ ...formData, startPoint: e.target.value })}
-                required
-              />
-              <InputField
-                label="End Point"
-                name="endPoint"
-                placeholder="e.g., Tagaytay Terminal"
-                value={formData.endPoint}
-                onChange={(e) => setFormData({ ...formData, endPoint: e.target.value })}
-                required
-              />
+              <div>
+                <label className="block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5">
+                  Start Terminal
+                </label>
+                <select
+                  value={formData.startTerminalId ?? ''}
+                  onChange={(e) => {
+                    const t = terminals.find(t => t._id === e.target.value)
+                    setFormData({
+                      ...formData,
+                      startTerminalId: e.target.value,
+                      startPoint: t?.name ?? '',
+                    })
+                  }}
+                  required
+                  className={selectClass}
+                >
+                  <option value="" className="bg-slate-900">Select start terminal</option>
+                  {terminals.map(t => (
+                    <option key={t._id} value={t._id} className="bg-slate-900">
+                      {t.name} — {t.location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium tracking-wider uppercase text-slate-400 mb-1.5">
+                  End Terminal
+                </label>
+                <select
+                  value={formData.endTerminalId ?? ''}
+                  onChange={(e) => {
+                    const t = terminals.find(t => t._id === e.target.value)
+                    setFormData({
+                      ...formData,
+                      endTerminalId: e.target.value,
+                      endPoint: t?.name ?? '',
+                    })
+                  }}
+                  required
+                  className={selectClass}
+                >
+                  <option value="" className="bg-slate-900">Select end terminal</option>
+                  {terminals.map(t => (
+                    <option key={t._id} value={t._id} className="bg-slate-900">
+                      {t.name} — {t.location}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
             <InputField
               label="Estimated Time"
               name="estimatedTime"
@@ -136,6 +206,7 @@ export default function RoutesPage() {
               onChange={(e) => setFormData({ ...formData, estimatedTime: e.target.value })}
               required
             />
+
             <div className="flex gap-2 pt-1">
               <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold h-9 px-4 cursor-pointer">
                 Save Route
@@ -151,7 +222,9 @@ export default function RoutesPage() {
 
       {loading ? (
         <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-slate-900/40 border border-white/5 rounded-xl animate-pulse" />)}
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-20 bg-slate-900/40 border border-white/5 rounded-xl animate-pulse" />
+          ))}
         </div>
       ) : routes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-slate-900/40 border border-white/5 rounded-xl">
@@ -171,9 +244,19 @@ export default function RoutesPage() {
                     </span>
                   </div>
                   <p className="text-sm text-slate-300 font-medium mb-1">
-                    {route.startPoint}<span className="text-slate-600 mx-2">→</span>{route.endPoint}
+                    {route.startPoint}
+                    <span className="text-slate-600 mx-2">→</span>
+                    {route.endPoint}
                   </p>
-                  <p className="text-xs text-slate-500">Est. {route.estimatedTime}</p>
+                  <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <span>Est. {route.estimatedTime}</span>
+                    {route.startTerminal && route.endTerminal && (
+                      <span className="flex items-center gap-1 text-emerald-500/60">
+                        <MapPin className="w-3 h-3" />
+                        Map linked
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <Button variant="ghost" onClick={() => route._id && setDeletingId(route._id)}
                   className="w-8 h-8 p-0 text-slate-600 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/10 cursor-pointer">

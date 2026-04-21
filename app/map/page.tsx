@@ -535,8 +535,9 @@ export default function MapPage() {
             )}
           </h2>
           <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden h-[560px]">
-            <Map
+           <Map
               terminals={terminals}
+              routes={routes}             
               selectedTerminal={selectedTerminal}
               onSelectTerminal={setSelectedTerminal}
             />

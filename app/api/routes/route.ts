@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDatabase } from '@/lib/mongodb'
-import { verifyToken } from '@/lib/auth'
 import { ObjectId } from 'mongodb'
 import { z } from 'zod'
 import { getPayload } from '@/lib/auth'
@@ -11,6 +10,8 @@ const routeSchema = z.object({
   endPoint: z.string().min(1).max(150),
   distance: z.number().positive(),
   estimatedTime: z.string().min(1).max(100),
+  startTerminalId: z.string().refine(v => ObjectId.isValid(v), 'Invalid start terminal ID'),
+  endTerminalId: z.string().refine(v => ObjectId.isValid(v), 'Invalid end terminal ID'),
 })
 
 export async function GET(request: NextRequest) {
@@ -21,9 +22,37 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDatabase()
-    const routes = await db.collection('routes')
-      .find({ operatorId: payload.operatorId })
-      .toArray()
+    const routes = await db.collection('routes').aggregate([
+      { $match: { operatorId: payload.operatorId } },
+
+      // join start terminal
+      {
+        $lookup: {
+          from: 'terminals',
+          let: { tid: { $toObjectId: '$startTerminalId' } },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$tid'] } } },
+            { $project: { name: 1, lat: 1, lng: 1 } },
+          ],
+          as: 'startTerminal',
+        },
+      },
+      { $unwind: { path: '$startTerminal', preserveNullAndEmptyArrays: true } },
+
+      // join end terminal
+      {
+        $lookup: {
+          from: 'terminals',
+          let: { tid: { $toObjectId: '$endTerminalId' } },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$tid'] } } },
+            { $project: { name: 1, lat: 1, lng: 1 } },
+          ],
+          as: 'endTerminal',
+        },
+      },
+      { $unwind: { path: '$endTerminal', preserveNullAndEmptyArrays: true } },
+    ]).toArray()
 
     return NextResponse.json(routes)
   } catch (error) {

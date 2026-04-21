@@ -48,10 +48,19 @@ export async function GET(request: NextRequest) {
         $match: { 'schedules.0': { $exists: true } },
       },
 
-      // 5. Cast operatorId string → ObjectId for the join
+      // 5. Cast operatorId string → ObjectId for operator join
       {
         $addFields: {
-          operatorObjectId: { $toObjectId: '$operatorId' },
+          operatorObjectId: {
+            $cond: {
+              if: { $and: [
+                { $ne: ['$operatorId', null] },
+                { $ne: ['$operatorId', ''] },
+              ]},
+              then: { $toObjectId: '$operatorId' },
+              else: null,
+            }
+          },
         },
       },
 
@@ -64,19 +73,48 @@ export async function GET(request: NextRequest) {
           as: 'operator',
         },
       },
-      {
-        $unwind: { path: '$operator', preserveNullAndEmptyArrays: true },
-      },
+      { $unwind: { path: '$operator', preserveNullAndEmptyArrays: true } },
 
-      // 7. Shape the final output
+      // 7. Join start terminal
+      {
+        $lookup: {
+          from: 'terminals',
+          let: { tid: { $toObjectId: '$startTerminalId' } },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$tid'] } } },
+            { $project: { name: 1, lat: 1, lng: 1 } },
+          ],
+          as: 'startTerminal',
+        },
+      },
+      { $unwind: { path: '$startTerminal', preserveNullAndEmptyArrays: true } },
+
+      // 8. Join end terminal
+      {
+        $lookup: {
+          from: 'terminals',
+          let: { tid: { $toObjectId: '$endTerminalId' } },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$tid'] } } },
+            { $project: { name: 1, lat: 1, lng: 1 } },
+          ],
+          as: 'endTerminal',
+        },
+      },
+      { $unwind: { path: '$endTerminal', preserveNullAndEmptyArrays: true } },
+
+      // 9. Shape the final output
       {
         $project: {
-      
-          routeNumber: 1,
-          startPoint: 1,
-          endPoint: 1,
-          distance: 1,
+          routeNumber:   1,
+          startPoint:    1,
+          endPoint:      1,
+          distance:      1,
           estimatedTime: 1,
+          startTerminalId: 1,
+          endTerminalId:   1,
+          startTerminal:   1,
+          endTerminal:     1,
           companyName: '$operator.companyName',
           schedules: {
             $map: {
@@ -99,6 +137,7 @@ export async function GET(request: NextRequest) {
     const routes = await db.collection('routes').aggregate(pipeline).toArray()
     return NextResponse.json(routes)
   } catch (error) {
+    console.error('[GET /api/public/routes]', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch routes' },
       { status: 500 }
