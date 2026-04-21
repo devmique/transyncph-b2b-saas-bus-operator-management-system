@@ -43,9 +43,9 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Terminals', href: '/dashboard/terminals', icon: Building2 },
     { name: 'Routes', href: '/dashboard/routes', icon: MapPin },
     { name: 'Schedules', href: '/dashboard/schedules', icon: Clock },
-    { name: 'Terminals', href: '/dashboard/terminals', icon: Building2 },
     { name: 'Announcements', href: '/dashboard/announcements', icon: Megaphone },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]

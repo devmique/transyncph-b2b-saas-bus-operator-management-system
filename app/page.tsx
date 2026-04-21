@@ -123,7 +123,7 @@ export default function Home() {
                   <circle cx="100" cy="80" r="3" fill="#60a5fa" opacity="0.7" />
                   <circle cx="320" cy="60" r="3" fill="#60a5fa" opacity="0.7" />
                 </svg>
-                <span className="relative text-xs text-slate-500 font-mono">Live Terminal Location</span>
+                <span className="relative text-xs text-slate-500 font-mono">Live Route Map</span>
               </div>
               <div className="mt-4 space-y-2">
                 {[
