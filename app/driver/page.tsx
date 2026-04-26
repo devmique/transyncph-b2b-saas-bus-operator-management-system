@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Bus, MapPin, Square, Navigation } from 'lucide-react'
 import { getSocket } from '@/lib/socket'
 import { Schedule } from '@/types'
+import Link from 'next/link'
 
 
 
@@ -83,9 +84,11 @@ export default function DriverPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6">
       {/* Header */}
       <div className="flex items-center gap-2 mb-10">
+        <Link href ="/">
         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
           <Bus className="w-4 h-4 text-white" />
         </div>
+        </Link>
         <span className="text-lg font-bold">
           Tran<span className="text-blue-500">Sync</span> PH
           <span className="ml-2 text-sm font-normal text-slate-500">· Driver</span>

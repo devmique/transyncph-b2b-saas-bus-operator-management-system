@@ -12,7 +12,10 @@ import InputField from '@/components/ui/InputField'
 import { Terminal, Route, Announcement, LiveBus } from '@/types'
 import dynamic from 'next/dynamic'
 
-const Map = dynamic(() => import('@/components/Map'), { ssr: false })
+const MapComponent = dynamic(() => import('@/components/Map'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-slate-900/60" />,
+})
 
 
 const ANNOUNCEMENT_STYLES = {
@@ -569,7 +572,7 @@ export default function MapPage() {
           )}
         </h2>
           <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden h-[560px]">
-           <Map
+           <MapComponent
               terminals={terminals}
               routes={routes}             
               selectedTerminal={selectedTerminal}
