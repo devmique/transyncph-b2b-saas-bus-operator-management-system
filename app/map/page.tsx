@@ -1,5 +1,6 @@
 'use client'
-
+import { useRef, useCallback } from 'react'
+import { getSocket } from '@/lib/socket'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
@@ -8,7 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
-import { Terminal, Route, Announcement } from '@/types'
+import { Terminal, Route, Announcement, LiveBus } from '@/types'
 import dynamic from 'next/dynamic'
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false })
@@ -37,7 +38,35 @@ export default function MapPage() {
   const [terminalSearch, setTerminalSearch]             = useState('')
   const [terminalPage, setTerminalPage]                 = useState(1)
   const [announcementPage, setAnnouncementPage] = useState(1)
+  const [liveBuses, setLiveBuses] = useState<Map<string, LiveBus>>(new Map())
   
+  useEffect(() => {
+  const socket = getSocket()
+
+  // Catch up on buses already moving when we open the page
+  socket.on('bus:snapshot', (buses: LiveBus[]) => {
+    setLiveBuses(new Map(buses.map(b => [b.scheduleId, b])))
+  })
+
+  socket.on('bus:location', (bus: LiveBus) => {
+    setLiveBuses(prev => new Map(prev).set(bus.scheduleId, bus))
+  })
+
+  socket.on('bus:removed', (scheduleId: string) => {
+    setLiveBuses(prev => {
+      const next = new Map(prev)
+      next.delete(scheduleId)
+      return next
+    })
+  })
+
+  return () => {
+    socket.off('bus:snapshot')
+    socket.off('bus:location')
+    socket.off('bus:removed')
+  }
+}, [])
+
   const filteredTerminals = terminals.filter((t) =>
     t.name.toLowerCase().includes(terminalSearch.toLowerCase()) ||
     t.location.toLowerCase().includes(terminalSearch.toLowerCase())
@@ -529,17 +558,23 @@ export default function MapPage() {
         {/* ── MAP ── */}
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-slate-100 mb-4">
-            Live Map
-            {selectedTerminal && (
-              <span className="ml-2 text-xs font-mono text-slate-500">· {selectedTerminal.name}</span>
-            )}
-          </h2>
+           Live Map
+          {selectedTerminal && (
+            <span className="ml-2 text-xs font-mono text-slate-500">· {selectedTerminal.name}</span>
+          )}
+          {liveBuses.size > 0 && (
+            <span className="ml-2 text-xs font-mono text-emerald-400">
+              · {liveBuses.size} bus{liveBuses.size !== 1 ? 'es' : ''} live
+            </span>
+          )}
+        </h2>
           <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden h-[560px]">
            <Map
               terminals={terminals}
               routes={routes}             
               selectedTerminal={selectedTerminal}
               onSelectTerminal={setSelectedTerminal}
+              liveBuses={Array.from(liveBuses.values())}
             />
           </div>
         </div>

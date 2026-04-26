@@ -43,6 +43,7 @@ export interface OperatorProfile {
     arrivalTime: string
     driverName: string
     vehicleNumber: string
+    routeNumber?: string
     status: 'active' | 'inactive'
     route?: {                      
       routeNumber: string
@@ -70,4 +71,10 @@ export interface OperatorProfile {
   
   type AnyDoc = Record<string, any>
   
-  
+  interface LiveBus {
+  scheduleId: string
+  lat: number
+  lng: number
+  vehicleNumber?: string
+  routeNumber?: string
+}
