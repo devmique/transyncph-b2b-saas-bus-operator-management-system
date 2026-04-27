@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Bus, MapPin, Square, Navigation } from 'lucide-react'
+import { Bus, MapPin, Square, Navigation, ArrowLeft } from 'lucide-react'
 import { getSocket } from '@/lib/socket'
 import { Schedule } from '@/types'
 import Link from 'next/link'
@@ -147,6 +147,7 @@ export default function DriverPage() {
             <Navigation className="w-5 h-5" />
             Start Trip
           </button>
+          
         ) : (
           <button
             onClick={stopTracking}
@@ -161,6 +162,14 @@ export default function DriverPage() {
           Keep this page open while driving. Do not close the browser.
         </p>
       </div>
+      <br/>
+      <Link
+              href="/map"
+              className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to map
+            </Link>
     </div>
   )
 }
