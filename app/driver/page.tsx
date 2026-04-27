@@ -1,15 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Bus, MapPin, Square, Navigation, ArrowLeft } from 'lucide-react'
 import { getSocket } from '@/lib/socket'
 import { Schedule } from '@/types'
 import Link from 'next/link'
 
-
-
-export default function DriverPage() {
+function DriverPageContent() {
   const searchParams  = useSearchParams()
   const scheduleId    = searchParams.get('scheduleId')
 
@@ -171,5 +169,13 @@ export default function DriverPage() {
               Back to map
             </Link>
     </div>
+  )
+}
+
+export default function DriverPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">Loading...</div>}>
+      <DriverPageContent />
+    </Suspense>
   )
 }
