@@ -1,12 +1,34 @@
 import L from 'leaflet'
 
-export const terminalIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
+export const terminalIcon = L.divIcon({
+  className: '',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -34],
+  html: `
+    <div style="
+      width:32px;height:32px;
+      display:flex;align-items:center;justify-content:center;
+      position:relative;
+    ">
+      <!-- pin body -->
+      <div style="
+        width:28px;height:28px;border-radius:50% 50% 50% 0;
+        transform:rotate(-45deg);
+        background:#2563eb;border:2px solid #93c5fd;
+        box-shadow:0 2px 8px rgba(37,99,235,0.4);
+        display:flex;align-items:center;justify-content:center;
+      ">
+        <!-- icon inside pin -->
+        <svg style="transform:rotate(45deg);width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13" rx="2"/>
+          <path d="M16 8h4l3 5v3h-7V8z"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/>
+          <circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+      </div>
+    </div>
+  `,
 })
 
 export const busIcon = (vehicleNumber?: string) =>
