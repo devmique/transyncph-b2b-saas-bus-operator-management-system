@@ -12,7 +12,7 @@ import InputField from '@/components/ui/InputField'
 import { Terminal, Route, Announcement, LiveBus } from '@/types'
 import dynamic from 'next/dynamic'
 
-const MapComponent = dynamic(() => import('@/components/Map'), {
+const MapComponent = dynamic(() => import('@/components/map'), {
   ssr: false,
   loading: () => <div className="w-full h-full bg-slate-900/60" />,
 })
