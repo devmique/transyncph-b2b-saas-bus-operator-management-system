@@ -536,14 +536,6 @@ export default function MapPage() {
          */}
       <div className="relative bg-slate-900/40 min-w-0 h-[60vh] sm:h-[70vh] lg:h-auto lg:flex-1">
 
-          {/* Coming soon banner */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none w-max max-w-[90%]">
-            <span className="inline-flex items-center gap-2 text-xs text-slate-400 bg-slate-950/85 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm whitespace-nowrap shadow-lg">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-600 shrink-0" />
-              <span className="truncate">Live bus tracking coming soon · Terminals & routes are live</span>
-            </span>
-          </div>
-
           {/* Selected terminal chip */}
           {selectedTerminal && (
             <div className="absolute top-3 right-3 z-10 max-w-[45%] sm:max-w-[200px]">
