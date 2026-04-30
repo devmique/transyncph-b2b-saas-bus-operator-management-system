@@ -1,275 +1,592 @@
 'use client'
-import { useRef, useCallback } from 'react'
-import { getSocket } from '@/lib/socket'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  MapPin, Search, ArrowLeft, Clock, Bus,
-  Building2, Ticket, Info, AlertTriangle, Bell, X,
+  MapPin, Search, Clock, Bus,
+  Building2, Ticket, Info, AlertTriangle, Bell, X, ChevronDown,
+  ArrowLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import InputField from '@/components/ui/InputField'
+import { getSocket } from '@/lib/socket'
 import { Terminal, Route, Announcement, LiveBus } from '@/types'
 import dynamic from 'next/dynamic'
 
+// ── Dynamic import ──────────────────────────────────────────────────────────
 const MapComponent = dynamic(() => import('@/components/map'), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-slate-900/60" />,
+  loading: () => <div className="w-full h-full bg-slate-900/60 animate-pulse" />,
 })
 
+// ── Constants ───────────────────────────────────────────────────────────────
+const ROUTES_PER_PAGE        = 3
+const TERMINALS_PER_PAGE     = 4
+const ANNOUNCEMENTS_PER_PAGE = 5
 
 const ANNOUNCEMENT_STYLES = {
-  info:    { icon: Info,          bg: 'bg-blue-500/10',  border: 'border-blue-500/20',  text: 'text-blue-400',  badge: 'Info' },
+  info:    { icon: Info,          bg: 'bg-blue-500/10',  border: 'border-blue-500/20',  text: 'text-blue-400',  badge: 'Info'    },
   warning: { icon: AlertTriangle, bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', badge: 'Warning' },
-  alert:   { icon: Bell,          bg: 'bg-red-500/10',   border: 'border-red-500/20',   text: 'text-red-400',   badge: 'Alert' },
+  alert:   { icon: Bell,          bg: 'bg-red-500/10',   border: 'border-red-500/20',   text: 'text-red-400',   badge: 'Alert'   },
 } as const
 
-const ROUTES_PER_PAGE    = 3
-const TERMINALS_PER_PAGE = 5
-const ANNOUNCEMENTS_PER_PAGE = 3
+// ── Pagination ──────────────────────────────────────────────────────────────
+interface PaginationProps {
+  page: number
+  total: number
+  onPrev: () => void
+  onNext: () => void
+  label?: string
+}
+
+function Pagination({ page, total, onPrev, onNext, label }: PaginationProps) {
+  if (total <= 1) return null
+  return (
+    <div className="flex items-center justify-between pt-2 border-t border-white/5">
+      {label && <p className="text-xs text-slate-600">{label}</p>}
+      <div className="flex gap-1.5 ml-auto">
+        <button
+          onClick={onPrev}
+          disabled={page === 1}
+          className="h-6 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-400 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+        >
+          ←
+        </button>
+        <button
+          onClick={onNext}
+          disabled={page === total}
+          className="h-6 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-400 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
+        >
+          →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab ─────────────────────────────────────────────────────────────────────
+function Tab({
+  active, onClick, children, count,
+}: { active: boolean; onClick: () => void; children: React.ReactNode; count?: number }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg transition whitespace-nowrap ${
+        active
+          ? 'bg-blue-600/15 border border-blue-600/30 text-blue-400'
+          : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+      }`}
+    >
+      {children}
+      {count !== undefined && (
+        <span className={`font-mono text-[10px] ${active ? 'text-blue-500' : 'text-slate-600'}`}>
+          {count}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────────
 export default function MapPage() {
-  const [terminals, setTerminals]                       = useState<Terminal[]>([])
-  const [routes, setRoutes]                             = useState<Route[]>([])
-  const [announcements, setAnnouncements]               = useState<Announcement[]>([])
+  const [terminals,            setTerminals]            = useState<Terminal[]>([])
+  const [routes,               setRoutes]               = useState<Route[]>([])
+  const [announcements,        setAnnouncements]        = useState<Announcement[]>([])
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
-  const [loading, setLoading]                           = useState(true)
-  const [searchQuery, setSearchQuery]                   = useState('')
-  const [filteredRoutes, setFilteredRoutes]             = useState<Route[]>([])
-  const [selectedTerminal, setSelectedTerminal]         = useState<Terminal | null>(null)
-  const [expandedRouteId, setExpandedRouteId]           = useState<string | null>(null)
-  const [currentPage, setCurrentPage]                   = useState(1)
-  const [terminalSearch, setTerminalSearch]             = useState('')
-  const [terminalPage, setTerminalPage]                 = useState(1)
-  const [announcementPage, setAnnouncementPage] = useState(1)
-  const [liveBuses, setLiveBuses] = useState<Map<string, LiveBus>>(new Map())
-  
+  const [loading,              setLoading]              = useState(true)
+  const [searchQuery,          setSearchQuery]          = useState('')
+  const [filteredRoutes,       setFilteredRoutes]       = useState<Route[]>([])
+  const [selectedTerminal,     setSelectedTerminal]     = useState<Terminal | null>(null)
+  const [expandedRouteId,      setExpandedRouteId]      = useState<string | null>(null)
+  const [currentPage,          setCurrentPage]          = useState(1)
+  const [terminalSearch,       setTerminalSearch]       = useState('')
+  const [terminalPage,         setTerminalPage]         = useState(1)
+  const [announcementPage,     setAnnouncementPage]     = useState(1)
+  const [liveBuses,            setLiveBuses]            = useState<Map<string, LiveBus>>(new Map())
+  const [activeTab,            setActiveTab]            = useState<'routes' | 'terminals' | 'alerts'>('routes')
+
+  // ── Socket ────────────────────────────────────────────────────────────────
   useEffect(() => {
-  const socket = getSocket()
+    const socket = getSocket()
+    socket.on('bus:snapshot', (buses: LiveBus[]) =>
+      setLiveBuses(new Map(buses.map(b => [b.scheduleId, b])))
+    )
+    socket.on('bus:location', (bus: LiveBus) =>
+      setLiveBuses(prev => new Map(prev).set(bus.scheduleId, bus))
+    )
+    socket.on('bus:removed', (scheduleId: string) =>
+      setLiveBuses(prev => { const n = new Map(prev); n.delete(scheduleId); return n })
+    )
+    return () => {
+      socket.off('bus:snapshot')
+      socket.off('bus:location')
+      socket.off('bus:removed')
+    }
+  }, [])
 
-  // Catch up on buses already moving when we open the page
-  socket.on('bus:snapshot', (buses: LiveBus[]) => {
-    setLiveBuses(new Map(buses.map(b => [b.scheduleId, b])))
-  })
-
-  socket.on('bus:location', (bus: LiveBus) => {
-    setLiveBuses(prev => new Map(prev).set(bus.scheduleId, bus))
-  })
-
-  socket.on('bus:removed', (scheduleId: string) => {
-    setLiveBuses(prev => {
-      const next = new Map(prev)
-      next.delete(scheduleId)
-      return next
-    })
-  })
-
-  return () => {
-    socket.off('bus:snapshot')
-    socket.off('bus:location')
-    socket.off('bus:removed')
-  }
-}, [])
-
-  const filteredTerminals = terminals.filter((t) =>
-    t.name.toLowerCase().includes(terminalSearch.toLowerCase()) ||
-    t.location.toLowerCase().includes(terminalSearch.toLowerCase())
-  )
-
-  //terminal pagination
-  const totalTerminalPages = Math.ceil(filteredTerminals.length / TERMINALS_PER_PAGE)
-  const paginatedTerminals = filteredTerminals.slice(
-    (terminalPage - 1) * TERMINALS_PER_PAGE,
-    terminalPage * TERMINALS_PER_PAGE
-  )
-
-  //routes pagination
-  const totalPages    = Math.ceil(filteredRoutes.length / ROUTES_PER_PAGE)
-  const paginatedRoutes = filteredRoutes.slice(
-    (currentPage - 1) * ROUTES_PER_PAGE,
-    currentPage * ROUTES_PER_PAGE
-  )
-
-  //announcements paginaton
-  const totalAnnouncementPages = Math.ceil(announcements.length / ANNOUNCEMENTS_PER_PAGE)
-  const paginatedAnnouncements = announcements.slice(
-    (announcementPage - 1) * ANNOUNCEMENTS_PER_PAGE,
-    announcementPage * ANNOUNCEMENTS_PER_PAGE
-  )
-
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => { fetchData() }, [])
 
   const fetchData = async () => {
     try {
-      const [terminalsRes, routesRes, announcementsRes] = await Promise.all([
+      const [tRes, rRes, aRes] = await Promise.all([
         fetch('/api/public/terminals'),
         fetch('/api/public/routes'),
         fetch('/api/public/announcements'),
       ])
-  
-      // parse each independently — one 404/500 won't crash the others
-      const terminalsData     = terminalsRes.ok     ? await terminalsRes.json()     : []
-      const routesData        = routesRes.ok        ? await routesRes.json()        : []
-      const announcementsData = announcementsRes.ok ? await announcementsRes.json() : []
-  
-      if (!terminalsRes.ok)     console.error('terminals API:', terminalsRes.status)
-      if (!routesRes.ok)        console.error('routes API:', routesRes.status)
-      if (!announcementsRes.ok) console.error('announcements API:', announcementsRes.status)
-  
-      setTerminals(Array.isArray(terminalsData) ? terminalsData : [])
-      setRoutes(Array.isArray(routesData) ? routesData : [])
-      setFilteredRoutes(Array.isArray(routesData) ? routesData : [])
-      setAnnouncements(Array.isArray(announcementsData) ? announcementsData : [])
-    } catch (error) {
-      console.error('Failed to fetch data:', error)
-      setTerminals([])
-      setRoutes([])
-      setFilteredRoutes([])
-      setAnnouncements([])
+      const tData = tRes.ok ? await tRes.json() : []
+      const rData = rRes.ok ? await rRes.json() : []
+      const aData = aRes.ok ? await aRes.json() : []
+      setTerminals(Array.isArray(tData) ? tData : [])
+      setRoutes(Array.isArray(rData) ? rData : [])
+      setFilteredRoutes(Array.isArray(rData) ? rData : [])
+      setAnnouncements(Array.isArray(aData) ? aData : [])
+    } catch (e) {
+      console.error('Fetch failed:', e)
+      setTerminals([]); setRoutes([]); setFilteredRoutes([]); setAnnouncements([])
     } finally {
       setLoading(false)
     }
   }
 
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const filteredTerminals = terminals.filter(t =>
+    t.name.toLowerCase().includes(terminalSearch.toLowerCase()) ||
+    t.location.toLowerCase().includes(terminalSearch.toLowerCase())
+  )
+
+  const totalPages             = Math.ceil(filteredRoutes.length    / ROUTES_PER_PAGE)
+  const totalTerminalPages     = Math.ceil(filteredTerminals.length / TERMINALS_PER_PAGE)
+  const totalAnnouncementPages = Math.ceil(announcements.length     / ANNOUNCEMENTS_PER_PAGE)
+
+  const paginatedRoutes        = filteredRoutes.slice(   (currentPage      - 1) * ROUTES_PER_PAGE,        currentPage      * ROUTES_PER_PAGE)
+  const paginatedTerminals     = filteredTerminals.slice((terminalPage     - 1) * TERMINALS_PER_PAGE,     terminalPage     * TERMINALS_PER_PAGE)
+  const paginatedAnnouncements = announcements.slice(    (announcementPage - 1) * ANNOUNCEMENTS_PER_PAGE, announcementPage * ANNOUNCEMENTS_PER_PAGE)
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSearch = (query: string) => {
     setSearchQuery(query)
     setCurrentPage(1)
     setExpandedRouteId(null)
     if (!query.trim()) { setFilteredRoutes(routes); return }
     const q = query.toLowerCase()
-    setFilteredRoutes(routes.filter((r) =>
+    setFilteredRoutes(routes.filter(r =>
       r.routeNumber.toLowerCase().includes(q) ||
-      r.startPoint.toLowerCase().includes(q) ||
+      r.startPoint.toLowerCase().includes(q)  ||
       r.endPoint.toLowerCase().includes(q)
     ))
   }
 
   const toggleExpand = (id: string) =>
-    setExpandedRouteId((prev) => (prev === id ? null : id))
+    setExpandedRouteId(prev => prev === id ? null : id)
+
 
   return (
-    <div className="min-h-screen text-slate-100">
+    /**
+     * Root: flex column so nav + body stack vertically.
+     * On lg+: body fills remaining viewport height (sidebar + map side-by-side).
+     * On mobile: body is normal flow (sidebar on top, map below).
+     */
+    <div className="min-h-screen text-slate-100 flex flex-col bg-slate-950">
 
       {/* ── NAV ── */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm font-medium">
+      <nav className="shrink-0 z-50 border-b border-white/5 bg-slate-950/90 backdrop-blur-md">
+        <div className="px-4 sm:px-6 h-14 flex items-center justify-between">
+           <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
-          <Button asChild size="sm" className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs">
-            <Link href="/register">Get Started</Link>
-          </Button>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {announcements.length > 0 && (
+              <button
+                onClick={() => setActiveTab('alerts')}
+                className="flex items-center gap-1.5 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 sm:px-2.5 py-1.5 rounded-lg hover:bg-amber-500/15 transition"
+              >
+                <Bell className="w-3 h-3" />
+                <span className="hidden sm:inline">{announcements.length} alert{announcements.length !== 1 ? 's' : ''}</span>
+                <span className="sm:hidden">{announcements.length}</span>
+              </button>
+            )}
+            <Button asChild size="sm" className="h-8 px-2.5 sm:px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs">
+              <Link href="/register">
+                <span className="">Sign Up</span>
+
+              </Link>
+            </Button>
+          </div>
         </div>
       </nav>
 
-      {/* ── SEARCH HERO ── */}
-      <section className="border-b border-white/5 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <span className="inline-block text-blue-500 text-xs font-mono font-medium tracking-widest uppercase bg-blue-500/10 border border-blue-500/25 px-2.5 py-1 rounded mb-4">
-            Route and Schedule Finder
-          </span>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-6">Find your route and trip schedule</h1>
-          <InputField
-            label="Search Routes"
-            name="routeSearch"
-            placeholder="Search by route number, starting point, or destination..."
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="relative"
-            inputSuffix={<Search className="w-4 h-4 text-slate-500 pointer-events-none" />}
+      {/**
+       * Body wrapper:
+       *   - Mobile:  flex-col — sidebar stacks above map
+       *   - Desktop: flex-row + overflow-hidden + fills remaining vh
+       */}
+      <div className="flex flex-col lg:flex-row flex-1 lg:overflow-hidden lg:h-[calc(100vh-56px)]">
+
+        {/* ── SIDEBAR ── */}
+        {/**
+         * Mobile:  full width, no height constraint (page scrolls naturally)
+         * Desktop: fixed width 380px, full height, internal scroll
+         */}
+        <aside className="
+          w-full flex flex-col
+          border-b border-white/5
+          bg-slate-950
+          lg:w-[380px] lg:shrink-0 lg:border-b-0 lg:border-r lg:overflow-hidden
+        ">
+          {/* Search */}
+          <div className="shrink-0 px-4 pt-4 pb-3 border-b border-white/5">
+            <p className="text-[10px] font-mono font-medium tracking-widest uppercase text-slate-600 mb-2">
+              Route & Schedule Finder
+            </p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Route number, origin, or destination..."
+                value={searchQuery}
+                onChange={e => handleSearch(e.target.value)}
+                className="w-full pl-9 pr-8 h-10 bg-white/5 border border-white/10 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-600/60 transition"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="shrink-0 flex items-center gap-1 px-3 py-2 border-b border-white/5 overflow-x-auto scrollbar-none">
+            <Tab active={activeTab === 'routes'}    onClick={() => setActiveTab('routes')}    count={filteredRoutes.length}>
+              <Bus className="w-3 h-3" /> Routes
+            </Tab>
+            <Tab active={activeTab === 'terminals'} onClick={() => setActiveTab('terminals')} count={terminals.length}>
+              <MapPin className="w-3 h-3" /> Terminals
+            </Tab>
+            {announcements.length > 0 && (
+              <Tab active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} count={announcements.length}>
+                <Bell className="w-3 h-3" /> Alerts
+              </Tab>
+            )}
+          </div>
+
+          {/**
+           * Scrollable content area:
+           *   - Mobile:  no height constraint, renders naturally, page scrolls
+           *   - Desktop: flex-1 + overflow-y-auto to scroll inside the sidebar
+           */}
+          <div className="lg:flex-1 lg:overflow-y-auto">
+
+            {/* ROUTES */}
+            {activeTab === 'routes' && (
+              <div className="p-3 space-y-2">
+                {loading ? (
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="h-20 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
+                  ))
+                ) : filteredRoutes.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <MapPin className="w-8 h-8 text-slate-700 mb-3" />
+                    <p className="text-sm text-slate-500">No routes match your search.</p>
+                    <button
+                      onClick={() => handleSearch('')}
+                      className="mt-2 text-xs text-blue-500 hover:text-blue-400 transition"
+                    >
+                      Clear search
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {paginatedRoutes.map(route => {
+                      const isExpanded = expandedRouteId === route._id
+                      const schedules  = route.schedules ?? []
+                      const minFare    = schedules.length > 0
+                        ? Math.min(...schedules.map(s => s.fare))
+                        : null
+
+                      return (
+                        <div
+                          key={route._id}
+                          className="bg-slate-900/50 border border-white/8 rounded-xl overflow-hidden hover:border-blue-600/30 transition"
+                        >
+                          <button
+                            onClick={() => route._id && toggleExpand(route._id)}
+                            className="cursor-pointer w-full text-left px-4 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className="text-sm font-bold text-blue-500">{route.routeNumber}</span>
+                                  <span className="text-[10px] font-mono bg-blue-500/10 border border-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">
+                                    {route.distance} km
+                                  </span>
+                                  {route.companyName && (
+                                    <span className="flex items-center gap-1 text-[10px] text-slate-600">
+                                      <Building2 className="w-2.5 h-2.5" />
+                                      {route.companyName}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-300 font-medium truncate mb-1">
+                                  {route.startPoint}
+                                  <span className="text-slate-600 mx-1.5">→</span>
+                                  {route.endPoint}
+                                </p>
+                                <div className="flex items-center gap-2.5 text-[10px] text-slate-500 flex-wrap">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5" />
+                                    {route.estimatedTime}
+                                  </span>
+                                  {minFare !== null && (
+                                    <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                                      <Ticket className="w-2.5 h-2.5" />
+                                      from ₱{minFare}
+                                    </span>
+                                  )}
+                                  <span className="text-slate-700">
+                                    {schedules.length} trip{schedules.length !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                              </div>
+                              <ChevronDown className={`w-3.5 h-3.5 text-slate-600 shrink-0 mt-1 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                            </div>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="border-t border-white/5 px-4 pb-3 pt-2 space-y-1.5">
+                              <p className="text-[10px] font-medium tracking-wider uppercase text-slate-600 mb-2">
+                                Available Trips
+                              </p>
+                              {schedules.length === 0 ? (
+                                <p className="text-xs text-slate-600">No active trips.</p>
+                              ) : (
+                                schedules.map(sched => (
+                                  <div
+                                    key={sched._id}
+                                    className="flex items-center justify-between gap-2 bg-white/3 border border-white/5 rounded-lg px-3 py-2"
+                                  >
+                                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-300 min-w-0">
+                                      <Clock className="w-3 h-3 text-slate-600 shrink-0" />
+                                      <span className="truncate">
+                                        {sched.departureTime}
+                                        <span className="text-slate-700 mx-1">→</span>
+                                        {sched.arrivalTime}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className="text-[10px] text-slate-600 font-mono hidden sm:inline">{sched.vehicleNumber}</span>
+                                      <span className="text-xs font-semibold text-emerald-400">₱{sched.fare}</span>
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                                        {sched.status}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+
+                    <div className="pt-1">
+                      <Pagination
+                        page={currentPage}
+                        total={totalPages}
+                        onPrev={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        onNext={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        label={`${currentPage} / ${totalPages} · ${filteredRoutes.length} routes`}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* TERMINALS */}
+            {activeTab === 'terminals' && (
+              <div className="p-3 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-600 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Filter terminals..."
+                    value={terminalSearch}
+                    onChange={e => { setTerminalSearch(e.target.value); setTerminalPage(1) }}
+                    className="w-full pl-7 pr-3 h-8 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-xs placeholder:text-slate-600 focus:outline-none focus:border-blue-600/60 transition"
+                  />
+                </div>
+
+                {loading ? (
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="h-14 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
+                  ))
+                ) : filteredTerminals.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <MapPin className="w-6 h-6 text-slate-700 mb-2" />
+                    <p className="text-xs text-slate-500">No terminals found.</p>
+                  </div>
+                ) : (
+                  <>
+                    {paginatedTerminals.map(terminal => (
+                      <button
+                        key={terminal._id}
+                        onClick={() => setSelectedTerminal(prev =>
+                          prev?._id === terminal._id ? null : terminal
+                        )}
+                        className={`cursor-pointer w-full text-left px-4 py-3 rounded-xl border transition flex items-center gap-3 ${
+                          selectedTerminal?._id === terminal._id
+                            ? 'bg-blue-600/10 border-blue-600/40'
+                            : 'bg-slate-900/50 border-white/8 hover:border-blue-600/30 hover:bg-slate-900/80'
+                        }`}
+                      >
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                          selectedTerminal?._id === terminal._id
+                            ? 'bg-blue-600/20 border border-blue-600/30'
+                            : 'bg-white/5 border border-white/10'
+                        }`}>
+                          <MapPin className={`w-3.5 h-3.5 ${
+                            selectedTerminal?._id === terminal._id ? 'text-blue-400' : 'text-slate-500'
+                          }`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-medium truncate ${
+                            selectedTerminal?._id === terminal._id ? 'text-blue-300' : 'text-slate-300'
+                          }`}>
+                            {terminal.name}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">{terminal.location}</p>
+                        </div>
+                        {selectedTerminal?._id === terminal._id && (
+                          <span className="shrink-0 text-[10px] text-blue-500 font-medium">On map ↗</span>
+                        )}
+                      </button>
+                    ))}
+
+                    <Pagination
+                      page={terminalPage}
+                      total={totalTerminalPages}
+                      onPrev={() => setTerminalPage(p => Math.max(1, p - 1))}
+                      onNext={() => setTerminalPage(p => Math.min(totalTerminalPages, p + 1))}
+                      label={`${terminalPage} / ${totalTerminalPages}`}
+                    />
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ALERTS */}
+            {activeTab === 'alerts' && (
+              <div className="p-3 space-y-2">
+                {paginatedAnnouncements.map(a => {
+                  const style = ANNOUNCEMENT_STYLES[a.type]
+                  const Icon  = style.icon
+                  return (
+                    <button
+                      key={a._id}
+                      onClick={() => setSelectedAnnouncement(a)}
+                      className={`cursor-pointer w-full text-left flex items-start gap-3 px-4 py-3 rounded-xl border ${style.bg} ${style.border} hover:opacity-80 transition`}
+                    >
+                      <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.text}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className={`text-xs font-semibold ${style.text}`}>{a.title}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${style.bg} ${style.border} ${style.text}`}>
+                            {style.badge}
+                          </span>
+                          {a.companyName && (
+                            <span className="flex items-center gap-1 text-[10px] text-slate-600">
+                              <Building2 className="w-2.5 h-2.5" />
+                              {a.companyName}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 truncate">{a.message}</p>
+                      </div>
+                      <span className="text-[10px] text-slate-600 shrink-0 mt-0.5">
+                        {a.createdAt
+                          ? new Date(a.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+                          : ''}
+                      </span>
+                    </button>
+                  )
+                })}
+
+                <Pagination
+                  page={announcementPage}
+                  total={totalAnnouncementPages}
+                  onPrev={() => setAnnouncementPage(p => Math.max(1, p - 1))}
+                  onNext={() => setAnnouncementPage(p => Math.min(totalAnnouncementPages, p + 1))}
+                  label={`${announcementPage} / ${totalAnnouncementPages} · ${announcements.length} alerts`}
+                />
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* ── MAP ── */}
+        {/**
+         * Mobile:  fixed height so it's visible without scrolling too far
+         * Desktop: flex-1 fills the remaining space beside the sidebar
+         */}
+        <div className="relative bg-slate-900/40 min-w-0 h-[55vw] sm:h-[420px] lg:h-auto lg:flex-1">
+
+          {/* Coming soon banner */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none w-max max-w-[90%]">
+            <span className="inline-flex items-center gap-2 text-xs text-slate-400 bg-slate-950/85 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm whitespace-nowrap shadow-lg">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-600 shrink-0" />
+              <span className="truncate">Live bus tracking coming soon · Terminals & routes are live</span>
+            </span>
+          </div>
+
+          {/* Selected terminal chip */}
+          {selectedTerminal && (
+            <div className="absolute top-3 right-3 z-10 max-w-[45%] sm:max-w-[200px]">
+              <div className="flex items-center gap-1.5 bg-slate-950/90 border border-blue-600/30 px-2.5 py-1.5 rounded-full backdrop-blur-sm shadow-lg">
+                <MapPin className="w-3 h-3 text-blue-400 shrink-0" />
+                <span className="text-xs text-blue-300 font-medium truncate">{selectedTerminal.name}</span>
+                <button
+                  onClick={() => setSelectedTerminal(null)}
+                  className="text-slate-600 hover:text-slate-400 transition ml-0.5 shrink-0"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <MapComponent
+            terminals={terminals}
+            routes={routes}
+            selectedTerminal={selectedTerminal}
+            onSelectTerminal={setSelectedTerminal}
+            liveBuses={Array.from(liveBuses.values())}
           />
         </div>
-      </section>
-
-      {/* ── ANNOUNCEMENTS ── */}
-{!loading && announcements.length > 0 && (
-  <div className="border-b border-white/5 bg-slate-950/40">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <p className="text-xs font-medium tracking-wider uppercase text-slate-500 mb-3">
-        Announcements
-        <span className="ml-2 font-mono text-slate-600">({announcements.length})</span>
-      </p>
-      <div className="space-y-2">
-        {paginatedAnnouncements.map((a) => {
-          const style = ANNOUNCEMENT_STYLES[a.type]
-          const Icon  = style.icon
-          return (
-            <button
-              key={a._id}
-              onClick={() => setSelectedAnnouncement(a)}
-              className={`cursor-pointer w-full text-left flex items-start gap-3 px-4 py-3 rounded-xl border ${style.bg} ${style.border} hover:opacity-80 transition`}
-            >
-              <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${style.text}`} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  <span className={`text-xs font-semibold ${style.text}`}>{a.title}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded border ${style.bg} ${style.border} ${style.text}`}>
-                    {style.badge}
-                  </span>
-                  {a.companyName && (
-                    <span className="flex items-center gap-1 text-xs text-slate-500">
-                      <Building2 className="w-3 h-3" />
-                      {a.companyName}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400 truncate">{a.message}</p>
-              </div>
-              <span className="text-xs text-slate-600 shrink-0 mt-0.5">
-                {a.createdAt
-                  ? new Date(a.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
-                  : ''}
-              </span>
-            </button>
-          )
-        })}
       </div>
-
-      {totalAnnouncementPages > 1 && (
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-          <p className="text-xs text-slate-500">
-            Page {announcementPage} of {totalAnnouncementPages} · {announcements.length} announcements
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setAnnouncementPage((p) => Math.max(1, p - 1))}
-              disabled={announcementPage === 1}
-              className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setAnnouncementPage((p) => Math.min(totalAnnouncementPages, p + 1))}
-              disabled={announcementPage === totalAnnouncementPages}
-              className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-)}
 
       {/* ── ANNOUNCEMENT MODAL ── */}
       {selectedAnnouncement && (() => {
         const a     = selectedAnnouncement
         const style = ANNOUNCEMENT_STYLES[a.type]
-        const Icon  = style.icon
+        const Icon  = style.icon  
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
             onClick={() => setSelectedAnnouncement(null)}
           >
             <div
               className="w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${style.bg} border ${style.border}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${style.bg} border ${style.border}`}>
                     <Icon className={`w-4 h-4 ${style.text}`} />
                   </div>
                   <div>
@@ -290,7 +607,6 @@ export default function MapPage() {
                 </button>
               </div>
 
-              {/* Badge + date */}
               <div className="flex items-center gap-2 mb-4">
                 <span className={`text-xs px-2 py-0.5 rounded border ${style.bg} ${style.border} ${style.text}`}>
                   {style.badge}
@@ -302,15 +618,13 @@ export default function MapPage() {
                 </span>
               </div>
 
-              {/* Message */}
               <p className="text-sm text-slate-300 leading-relaxed mb-4">{a.message}</p>
 
-              {/* Affected routes */}
               {a.affectedRoutes.length > 0 && (
                 <div className="pt-4 border-t border-white/5">
                   <p className="text-xs text-slate-500 mb-2">Affected Routes</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {a.affectedRoutes.map((r) => (
+                    {a.affectedRoutes.map(r => (
                       <span key={r} className="text-xs font-mono bg-white/5 border border-white/10 text-slate-400 px-2 py-0.5 rounded">
                         {r}
                       </span>
@@ -322,305 +636,6 @@ export default function MapPage() {
           </div>
         )
       })()}
-
-      {/* ── MAIN CONTENT ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid lg:grid-cols-3 gap-8">
-
-          {/* ── LEFT: ROUTES ── */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-slate-100">
-                Available Routes
-                {filteredRoutes.length > 0 && (
-                  <span className="ml-2 text-xs font-mono text-slate-500">({filteredRoutes.length})</span>
-                )}
-              </h2>
-            </div>
-
-            {loading ? (
-              <div className="space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-24 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
-                ))}
-              </div>
-            ) : filteredRoutes.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 bg-slate-900/40 border border-white/5 rounded-xl">
-                <MapPin className="w-10 h-10 text-slate-700 mb-3" />
-                <p className="text-sm text-slate-500">No routes found. Try a different search.</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {paginatedRoutes.map((route) => {
-                    const isExpanded = expandedRouteId === route._id
-                    const schedules  = route.schedules ?? []
-                    const minFare    = schedules.length > 0
-                      ? Math.min(...schedules.map((s) => s.fare))
-                      : null
-
-                    return (
-                      <div
-                        key={route._id}
-                        className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden hover:border-blue-600/30 transition"
-                      >
-                        {/* Route header */}
-                        <button
-                          onClick={() => route._id && toggleExpand(route._id)}
-                          className="cursor-pointer w-full text-left px-5 py-4"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                <span className="text-base font-bold text-blue-500 tracking-tight">{route.routeNumber}</span>
-                                <span className="text-xs font-mono bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
-                                  {route.distance} km
-                                </span>
-                                {route.companyName && (
-                                  <span className="flex items-center gap-1 text-xs text-slate-500">
-                                    <Building2 className="w-3 h-3" />
-                                    {route.companyName}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-slate-300 font-medium mb-1.5">
-                                {route.startPoint}
-                                <span className="text-slate-600 mx-2">→</span>
-                                {route.endPoint}
-                              </p>
-                              <div className="flex items-center gap-3 text-xs text-slate-500">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {route.estimatedTime}
-                                </span>
-                                {minFare !== null && (
-                                  <span className="flex items-center gap-1 text-emerald-400 font-medium">
-                                    <Ticket className="w-3 h-3" />
-                                    Starts at ₱{minFare}
-                                  </span>
-                                )}
-                                <span className="text-slate-600">
-                                  {schedules.length} trip{schedules.length !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="shrink-0 mt-1">
-                              <svg
-                                className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                              >
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
-                            </div>
-                          </div>
-                        </button>
-
-                        {/* Schedules */}
-                        {isExpanded && (
-                          <div className="border-t border-white/5 px-5 pb-4 pt-3 space-y-2">
-                            <p className="text-xs font-medium tracking-wider uppercase text-slate-500 mb-3">
-                              Available Trips
-                            </p>
-                            {schedules.length === 0 ? (
-                              <p className="text-xs text-slate-600">No active trips for this route.</p>
-                            ) : (
-                              schedules.map((sched) => (
-                                <div
-                                  key={sched._id}
-                                  className="flex items-center justify-between gap-4 bg-white/3 border border-white/5 rounded-lg px-4 py-2.5"
-                                >
-                                  <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                                    <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                                    {sched.departureTime}
-                                    <span className="text-slate-600">→</span>
-                                    {sched.arrivalTime}
-                                  </div>
-                                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                                    <span className="text-xs text-slate-500 font-mono">{sched.vehicleNumber}</span>
-                                    <span className="text-xs font-semibold text-emerald-400">₱{sched.fare}</span>
-                                    <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                                      {sched.status}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-                    <p className="text-xs text-slate-500">
-                      Page {currentPage} of {totalPages} · {filteredRoutes.length} routes
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="h-8 px-3 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="h-8 px-3 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* ── RIGHT: TERMINALS ── */}
-          <div>
-            <h2 className="text-lg font-semibold text-slate-100 mb-4">Terminals</h2>
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search terminals..."
-                value={terminalSearch}
-                onChange={(e) => { setTerminalSearch(e.target.value); setTerminalPage(1) }}
-                className="w-full pl-8 pr-3 h-9 bg-white/5 border border-white/10 rounded-lg text-slate-100 text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-600 transition"
-              />
-            </div>
-
-            {loading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-900/60 border border-white/5 rounded-xl animate-pulse" />
-                ))}
-              </div>
-            ) : filteredTerminals.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 bg-slate-900/40 border border-white/5 rounded-xl">
-                <MapPin className="w-6 h-6 text-slate-700 mb-2" />
-                <p className="text-xs text-slate-500">No terminals found.</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  {paginatedTerminals.map((terminal) => (
-                    <button
-                      key={terminal._id}
-                      onClick={() => setSelectedTerminal(terminal)}
-                      className={`cursor-pointer w-full text-left px-4 py-3 rounded-xl border transition flex items-start gap-3 ${
-                        selectedTerminal?._id === terminal._id
-                          ? 'bg-blue-600/10 border-blue-600/40'
-                          : 'bg-slate-900/60 border-white/8 hover:border-blue-600/30 hover:bg-slate-900/80'
-                      }`}
-                    >
-                      <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${
-                        selectedTerminal?._id === terminal._id ? 'text-blue-400' : 'text-slate-500'
-                      }`} />
-                      <div>
-                        <p className={`text-sm font-medium ${
-                          selectedTerminal?._id === terminal._id ? 'text-blue-300' : 'text-slate-300'
-                        }`}>
-                          {terminal.name}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">{terminal.location}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                {totalTerminalPages > 1 && (
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-                    <p className="text-xs text-slate-500">{terminalPage}/{totalTerminalPages}</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setTerminalPage((p) => Math.max(1, p - 1))}
-                        disabled={terminalPage === 1}
-                        className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setTerminalPage((p) => Math.min(totalTerminalPages, p + 1))}
-                        disabled={terminalPage === totalTerminalPages}
-                        className="h-7 px-2.5 text-xs bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ── MAP ── */}
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold text-slate-100 mb-4">
-           Live Map
-          {selectedTerminal && (
-            <span className="ml-2 text-xs font-mono text-slate-500">· {selectedTerminal.name}</span>
-          )}
-          {liveBuses.size > 0 && (
-            <span className="ml-2 text-xs font-mono text-emerald-400">
-              · {liveBuses.size} bus{liveBuses.size !== 1 ? 'es' : ''} live
-            </span>
-          )}
-        </h2>
-          <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl overflow-hidden h-[560px]">
-           <MapComponent
-              terminals={terminals}
-              routes={routes}             
-              selectedTerminal={selectedTerminal}
-              onSelectTerminal={setSelectedTerminal}
-              liveBuses={Array.from(liveBuses.values())}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── CTA ── */}
-      <section className="border-t border-white/5 py-16 mt-8">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-100 mb-3">
-            Are you a bus operator?
-          </h2>
-          <p className="text-slate-500 font-light mb-8">
-            Join TranSync PH and reach more commuters with our digital route management platform.
-          </p>
-          <Button asChild className="h-11 px-7 bg-blue-600 hover:bg-blue-700 text-white">
-            <Link href="/register">
-              Start Your Free Trial
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-              </svg>
-            </Link>
-          </Button>
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-white/5 bg-slate-950/80 backdrop-blur-sm py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-              <Bus className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="text-sm font-bold text-slate-400">
-              Tran<span className="text-blue-500">Sync</span> PH
-            </span>
-          </div>
-          <p className="text-xs text-slate-600">© 2025 TranSync PH. All rights reserved.</p>
-          <div className="flex items-center gap-5 text-xs text-slate-600">
-            <Link href="/privacy" className="hover:text-slate-400 transition">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-slate-400 transition">Terms of Service</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
