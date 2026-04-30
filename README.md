@@ -18,6 +18,7 @@ A modern SaaS platform for Philippine bus operators to streamline route manageme
 - **Route Finder**: Search and discover bus routes and trip schedules and information by route number, start point, or destination
 - **Terminal Locator**: Find nearby terminals and get location information
 - **Service Visibility**: View available routes and key operational details
+- **Real-time Bus Locator**: Track the location of the active bus managed by the specific driver
 
 ## Technology Stack
 
@@ -26,6 +27,8 @@ A modern SaaS platform for Philippine bus operators to streamline route manageme
 - **Database**: MongoDB
 - **Authentication**: JWT stored in HttpOnly cookies with bcrypt password hashing
 - **Styling**: Tailwind CSS v4 with semantic design tokens
+- **Real-time**: Socket.io
+
 
 ## Prerequisites
 
@@ -79,8 +82,12 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
 1. Visit `/map` page for public route finder
 2. Search by route number, starting point, or destination
-3. View available terminals and route details
+3. View available terminals, live bus location managed by drivers and route details
 4. Register button to encourage operator sign-ups
+
+### Driver Live Bus Location Management
+1. Visit the link sent by the operator. Example link format:`transyncph.vercel.app/driver?scheduleId=example123` for start/end live trip management.
+
 
 ## Database Schema
 
