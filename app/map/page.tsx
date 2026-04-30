@@ -534,7 +534,7 @@ export default function MapPage() {
          * Mobile:  fixed height so it's visible without scrolling too far
          * Desktop: flex-1 fills the remaining space beside the sidebar
          */}
-        <div className="relative bg-slate-900/40 min-w-0 h-[55vw] sm:h-[420px] lg:h-auto lg:flex-1">
+      <div className="relative bg-slate-900/40 min-w-0 h-[60vh] sm:h-[70vh] lg:h-auto lg:flex-1">
 
           {/* Coming soon banner */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none w-max max-w-[90%]">
