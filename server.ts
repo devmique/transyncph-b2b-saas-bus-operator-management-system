@@ -13,6 +13,7 @@ interface LocationPayload {
   lng: number
   vehicleNumber?: string
   routeNumber?: string
+  companyName?: string
 }
 
 app.prepare().then(() => {

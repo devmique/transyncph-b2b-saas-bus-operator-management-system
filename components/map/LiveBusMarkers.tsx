@@ -14,11 +14,14 @@ export default function LiveBusMarkers({ liveBuses }: { liveBuses: LiveBus[] }) 
           icon={busIcon(bus.vehicleNumber)}
         >
           <Popup>
-            <div className="text-sm font-medium">🚌 {bus.vehicleNumber ?? 'Bus'}</div>
-            {bus.routeNumber && (
-              <div className="text-xs text-slate-500">Route {bus.routeNumber}</div>
-            )}
-            <div className="text-xs text-emerald-600 font-semibold mt-0.5">● Live</div>
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-slate-900">🚌 {bus.vehicleNumber ?? 'Bus'}</div>
+              {bus.companyName && (
+                <div className="text-xs text-slate-700 font-medium">{bus.companyName}</div>
+              )}
+
+              <div className="text-xs text-emerald-600 font-semibold mt-1">● Live</div>
+            </div>
           </Popup>
         </Marker>
       ))}

@@ -71,10 +71,11 @@ export interface OperatorProfile {
   
   type AnyDoc = Record<string, any>
   
-  interface LiveBus {
-  scheduleId: string
-  lat: number
-  lng: number
-  vehicleNumber?: string
-  routeNumber?: string
-}
+  export interface LiveBus {
+    scheduleId: string
+    lat: number
+    lng: number
+    vehicleNumber?: string
+    routeNumber?: string
+    companyName?: string
+  }

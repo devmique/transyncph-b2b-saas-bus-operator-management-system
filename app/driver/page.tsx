@@ -11,7 +11,7 @@ function DriverPageContent() {
   const searchParams  = useSearchParams()
   const scheduleId    = searchParams.get('scheduleId')
 
-  const [schedule, setSchedule]       = useState<Schedule | null>(null)
+  const [schedule, setSchedule]       = useState<(Schedule & { companyName?: string }) | null>(null)
   const [tracking, setTracking]       = useState(false)
   const [status, setStatus]           = useState<'idle' | 'locating' | 'live' | 'error'>('idle')
   const [accuracy, setAccuracy]       = useState<number | null>(null)
@@ -47,6 +47,7 @@ function DriverPageContent() {
           lng: pos.coords.longitude,
           vehicleNumber: schedule?.vehicleNumber,
           routeNumber:   schedule?.routeNumber,
+          companyName: schedule?.companyName,
         })
       },
       (err) => {
