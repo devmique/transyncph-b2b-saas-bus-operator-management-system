@@ -175,7 +175,11 @@ function DriverPageContent() {
 
 export default function DriverPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin"></div>
+    </div>
+  }>
       <DriverPageContent />
     </Suspense>
   )
