@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, Clock } from 'lucide-react'
+import { Plus, Trash2, Edit2, Clock, Copy, Check } from 'lucide-react'
 import { Route, Schedule } from '@/types'
 import { Button } from '@/components/ui/button'
 import InputField from '@/components/ui/InputField'
 import { to12Hour, to24Hour } from '@/utils/format'
+import { useToast } from '@/components/ui/use-toast'
 
 const empty: Schedule = {
   routeId: '',
@@ -18,6 +19,7 @@ const empty: Schedule = {
 }
 
 export default function SchedulesPage() {
+  const { toast } = useToast()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [routes, setRoutes] = useState<Route[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,6 +28,7 @@ export default function SchedulesPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState<Schedule>(empty)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchSchedules()
@@ -77,6 +80,26 @@ export default function SchedulesPage() {
       fetchSchedules()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save schedule')
+    }
+  }
+
+  const handleCopyDriverLink = async (scheduleId: string | undefined) => {
+    if (!scheduleId) return
+    const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/driver?scheduleId=${scheduleId}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopiedId(scheduleId)
+      toast({
+        title: 'Link copied!',
+        description: 'Share this link with your driver.',
+      })
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (e) {
+      toast({
+        title: 'Failed to copy',
+        description: 'Could not copy to clipboard.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -283,6 +306,14 @@ export default function SchedulesPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
+                  <Button variant="ghost" onClick={() => handleCopyDriverLink(schedule._id)}
+                    className="w-8 h-8 p-0 text-slate-600 hover:text-emerald-400 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/10 cursor-pointer">
+                    {copiedId === schedule._id ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </Button>
                   <Button variant="ghost" onClick={() => handleEdit(schedule)}
                     className="w-8 h-8 p-0 text-slate-600 hover:text-blue-400 hover:bg-blue-500/10 border border-transparent hover:border-blue-500/10 cursor-pointer">
                     <Edit2 className="w-3.5 h-3.5" />
