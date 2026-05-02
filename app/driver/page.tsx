@@ -17,6 +17,12 @@ function DriverPageContent() {
   const [accuracy, setAccuracy]       = useState<number | null>(null)
   const [lastSent, setLastSent]       = useState<string | null>(null)
   const watchIdRef                    = useRef<number | null>(null)
+  const scheduleRef = useRef<(Schedule & { companyName?: string }) | null>(null)
+
+  useEffect(() => {
+  scheduleRef.current = schedule
+}, [schedule])
+
 
   // Fetch schedule info
   useEffect(() => {
@@ -38,6 +44,7 @@ function DriverPageContent() {
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        const current = scheduleRef.current  
         setStatus('live')
         setAccuracy(Math.round(pos.coords.accuracy))
         setLastSent(new Date().toLocaleTimeString('en-PH'))
@@ -45,9 +52,9 @@ function DriverPageContent() {
           scheduleId,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
-          vehicleNumber: schedule?.vehicleNumber,
-          routeNumber:   schedule?.routeNumber,
-          companyName: schedule?.companyName,
+          vehicleNumber: current?.vehicleNumber,
+          routeNumber:   current?.routeNumber,
+          companyName:   current?.companyName,
         })
       },
       (err) => {
@@ -141,7 +148,7 @@ function DriverPageContent() {
           <button
             onClick={startTracking}
             disabled={!scheduleId}
-            className="w-full h-14 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-base flex items-center justify-center gap-2 transition"
+            className=" cursor-pointer w-full h-14 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-base flex items-center justify-center gap-2 transition"
           >
             <Navigation className="w-5 h-5" />
             Start Trip
@@ -150,7 +157,7 @@ function DriverPageContent() {
         ) : (
           <button
             onClick={stopTracking}
-            className="w-full h-14 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 font-semibold text-base flex items-center justify-center gap-2 transition"
+            className="cursor-pointer w-full h-14 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 font-semibold text-base flex items-center justify-center gap-2 transition"
           >
             <Square className="w-5 h-5" />
             End Trip
