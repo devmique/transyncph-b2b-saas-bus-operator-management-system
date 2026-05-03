@@ -19,9 +19,15 @@ export async function GET(
     if (schedule?.routeId) {
       const route = await db.collection('routes').findOne(
         { _id: new ObjectId(schedule.routeId) },
-        { projection: { companyName: 1 } }
+        { projection: { operatorId: 1 } }
       )
-      companyName = route?.companyName
+      if(route?.operatorId) {
+         const operator = await db.collection('operators').findOne(
+      { _id: new ObjectId(route.operatorId) },
+      { projection: { companyName: 1 } }
+    )
+        companyName = operator?.companyName
+      }
     }
     
     return NextResponse.json({ ...schedule, _id: schedule._id.toString(), companyName })
