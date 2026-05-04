@@ -66,12 +66,9 @@ app.prepare().then(() => {
       io.emit('bus:removed', scheduleId)
     })
 
-    socket.on('disconnect', () => {
-      // Can't tell who was a driver here without auth, fine for MVP
-    })
   })
 
-  const port = parseInt(process.env.PORT || '3000', 10)
+  const port = parseInt(process.env.PORT || '4000', 10)
   httpServer.listen(port, () => {
     console.log(`> Ready on http://localhost:${port}`)
   })

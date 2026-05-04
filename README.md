@@ -59,6 +59,7 @@ Create a `.env.local` file with the following variables:
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
 RESEND_API_KEY=
+NEXT_PUBLIC_SOCKET_URL=your_separate_socket_url
 ```
 
 1. Run the development server:
