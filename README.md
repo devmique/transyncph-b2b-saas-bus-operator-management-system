@@ -108,6 +108,9 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application.
 - MongoDB ObjectID validation
 - Input validation with Zod
 
+## Separate server repo for socket
+ [transyncph-socket](https://github.com/devmique/transyncph-socket)
+
 ## Future Enhancements
 
 - Real road routes (curves, highways, turns)
