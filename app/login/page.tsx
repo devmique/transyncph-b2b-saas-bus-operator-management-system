@@ -87,7 +87,7 @@ export default function LoginPage() {
               </div>
             </Link>
             <span className="text-white font-bold text-base tracking-tight">
-              Route<span className="text-blue-500">Sync</span> PH
+              Tran<span className="text-blue-500">Sync</span> PH
             </span>
           </div>
 
