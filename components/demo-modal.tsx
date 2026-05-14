@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { X, Play } from 'lucide-react'
+import { X, Play, VideoOff } from 'lucide-react'
+
+type VideoState = 'loading' | 'ready' | 'error'
 
 interface DemoModalProps {
   isOpen: boolean
@@ -10,13 +12,11 @@ interface DemoModalProps {
 
 export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  // true  → video loaded fine, hide placeholder
-  // false → video missing/errored, show placeholder
-  const [videoReady, setVideoReady] = useState(false)
+  const [videoState, setVideoState] = useState<VideoState>('loading')
 
-  // Reset ready-state each time the modal opens so it re-checks
+  // Reset to loading each time the modal opens so it re-checks
   useEffect(() => {
-    if (isOpen) setVideoReady(false)
+    if (isOpen) setVideoState('loading')
   }, [isOpen])
 
   // Pause video and restore scroll when modal closes
@@ -83,7 +83,7 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
             {/* Video area */}
             <div className="relative aspect-video bg-slate-950">
 
-              {/* Actual video — always in the DOM so events fire */}
+              {/* Actual video — always in DOM so events fire */}
               <video
                 ref={videoRef}
                 id="demo-video"
@@ -91,18 +91,17 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
                 controls
                 preload="metadata"
                 poster="/demo-poster.jpg"
-                // Hide until ready so it doesn't flash a black bar over the placeholder
-                style={{ display: videoReady ? 'block' : 'none' }}
-                onLoadedMetadata={() => setVideoReady(true)}
-                onCanPlay={() => setVideoReady(true)}
-                onError={() => setVideoReady(false)}
+                style={{ display: videoState === 'ready' ? 'block' : 'none' }}
+                onLoadedMetadata={() => setVideoState('ready')}
+                onCanPlay={() => setVideoState('ready')}
+                onError={() => setVideoState('error')}
               >
                 <source src="/demo.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
 
-              {/* Placeholder — only visible when video isn't ready */}
-              {!videoReady && (
+              {/* Loading spinner — shown while video is fetching */}
+              {videoState === 'loading' && (
                 <div
                   className="absolute inset-0 flex flex-col items-center justify-center gap-4 select-none"
                   style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%)' }}
@@ -116,15 +115,58 @@ export default function DemoModal({ isOpen, onClose }: DemoModalProps) {
                         'repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.04) 39px,rgba(255,255,255,0.04) 40px)',
                     }}
                   />
-                  {/* Pulse ring + play icon */}
+                  {/* Spinner ring */}
                   <div className="relative flex items-center justify-center">
-                    <span className="absolute w-20 h-20 rounded-full bg-blue-600/20 animate-ping" />
-                    <div className="relative z-10 w-16 h-16 rounded-full bg-blue-600/20 border border-blue-600/40 flex items-center justify-center backdrop-blur">
-                      <Play className="w-7 h-7 text-blue-400 translate-x-0.5" />
+                    <svg
+                      className="w-14 h-14 animate-spin"
+                      viewBox="0 0 56 56"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle cx="28" cy="28" r="24" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+                      <path
+                        d="M52 28a24 24 0 0 0-24-24"
+                        stroke="url(#spinGrad)"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                      />
+                      <defs>
+                        <linearGradient id="spinGrad" x1="28" y1="4" x2="52" y2="28" gradientUnits="userSpaceOnUse">
+                          <stop stopColor="#3b82f6" />
+                          <stop offset="1" stopColor="#60a5fa" stopOpacity="0.2" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <Play className="absolute w-5 h-5 text-blue-400/60" />
+                  </div>
+                  <p className="relative text-slate-500 text-sm font-light">Loading video…</p>
+                </div>
+              )}
+
+              {/* Error / coming-soon — shown only when the file is missing */}
+              {videoState === 'error' && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-4 select-none"
+                  style={{ background: 'linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#0f172a 100%)' }}
+                >
+                  {/* Grid texture */}
+                  <div
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                      backgroundImage:
+                        'repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,0.04) 39px,rgba(255,255,255,0.04) 40px),' +
+                        'repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.04) 39px,rgba(255,255,255,0.04) 40px)',
+                    }}
+                  />
+                  {/* Icon */}
+                  <div className="relative flex items-center justify-center">
+                    <span className="absolute w-20 h-20 rounded-full bg-blue-600/10 animate-ping" />
+                    <div className="relative z-10 w-16 h-16 rounded-full bg-blue-600/10 border border-blue-600/30 flex items-center justify-center backdrop-blur">
+                      <VideoOff className="w-6 h-6 text-blue-400/60" />
                     </div>
                   </div>
                   <p className="relative text-slate-500 text-sm font-light text-center px-6">
-                    Video coming soon — add&nbsp;
+                    Demo video coming soon — drop&nbsp;
                     <code className="text-slate-400 bg-white/5 px-1.5 py-0.5 rounded text-xs">public/demo.mp4</code>
                     &nbsp;to enable playback.
                   </p>
