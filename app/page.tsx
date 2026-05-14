@@ -370,7 +370,7 @@ export default function Home() {
               Tran<span className="text-blue-500">Sync</span> PH
             </span>
           </div>
-          <p className="text-xs text-slate-600">© 2025 RouteSync PH. All rights reserved.</p>
+          <p className="text-xs text-slate-600">© {new Date().getFullYear()} TranSync PH. All rights reserved.</p>
           <div className="flex items-center gap-5 text-xs text-slate-600">
             <Link href="/" className="hover:text-slate-400 transition">Privacy Policy</Link>
             <Link href="/" className="hover:text-slate-400 transition">Terms of Service</Link>
