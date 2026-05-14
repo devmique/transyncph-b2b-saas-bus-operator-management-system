@@ -1,86 +1,79 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bus, MapPin, TrendingUp } from 'lucide-react'
-import { safeDateToMs, formatTimeAgo, formatPHPCompact } from '@/utils/format'
+import Link from 'next/link'
+import {
+  Bus, MapPin, TrendingUp, Building2, Clock,
+  ArrowRight, Activity, CheckCircle2, XCircle,
+  AlertCircle, ChevronRight,
+} from 'lucide-react'
+import { safeDateToMs, formatTimeAgo, formatPHPCompact, to12Hour } from '@/utils/format'
 import { ActivityItem, AnyDoc } from '@/types'
 
+/* ─── tiny helpers ─── */
+const Skeleton = ({ className }: { className?: string }) => (
+  <div className={`bg-white/5 rounded animate-pulse ${className ?? ''}`} />
+)
+
+function StatBadge({ pct, label }: { pct: number; label: string }) {
+  const color = pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'
+  return (
+    <div className="mt-3">
+      <div className="flex justify-between text-xs mb-1.5">
+        <span className="text-slate-500">{label}</span>
+        <span className="text-slate-400 font-medium">{pct.toFixed(1)}%</span>
+      </div>
+      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${color}`}
+          style={{ width: `${Math.min(pct, 100)}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+type RouteRow = {
+  id: string
+  routeNumber: string
+  startPoint: string
+  endPoint: string
+  activeSchedules: number
+  totalSchedules: number
+  vehicles: string[]
+}
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const [statsValues, setStatsValues] = useState({
+  const [stats, setStats] = useState({
     activeRoutes: '—',
     totalVehicles: '—',
     terminals: '—',
-    monthlyRevenue: '—',
+    totalSchedules: '—',
   })
 
-  const [quickStatsValues, setQuickStatsValues] = useState({
-    activeScheduleRate: '—',
-    fleetUtilization: '—',
-    avgPassengersPerBus: '—',
+  const [rates, setRates] = useState({
+    scheduleRate: 0,
+    fleetUtil: 0,
   })
 
+  const [routes, setRoutes] = useState<RouteRow[]>([])
+  const [recentSchedules, setRecentSchedules] = useState<AnyDoc[]>([])
   const [activity, setActivity] = useState<ActivityItem[]>([])
-
-  const statMeta = [
-      {
-        key: 'activeRoutes',
-        label: 'Active Routes',
-        icon: MapPin,
-        accent: 'text-blue-400',
-        bg: 'bg-blue-500/10',
-        border: 'border-blue-500/20',
-      },
-      {
-        key: 'totalVehicles',
-        label: 'Total Vehicles',
-        icon: Bus,
-        accent: 'text-emerald-400',
-        bg: 'bg-emerald-500/10',
-        border: 'border-emerald-500/20',
-      },
-      {
-        key: 'terminals',
-        label: 'Terminals',
-        icon: MapPin,
-        accent: 'text-violet-400',
-        bg: 'bg-violet-500/10',
-        border: 'border-violet-500/20',
-      },
-      {
-        key: 'monthlyRevenue',
-        label: 'Monthly Revenue',
-        icon: TrendingUp,
-        accent: 'text-amber-400',
-        bg: 'bg-amber-500/10',
-        border: 'border-amber-500/20',
-      },
-    ]
-   
-  
-
-  const quickMeta = [
-      { key: 'activeScheduleRate', label: 'Active Schedule Rate', accent: 'text-emerald-400' },
-      { key: 'fleetUtilization', label: 'Fleet Utilization', accent: 'text-blue-400' },
-      { key: 'avgPassengersPerBus', label: 'Avg Passengers/Bus', accent: 'text-violet-400' },
-    ]
-   
 
   useEffect(() => {
     let cancelled = false
 
-    const fetchDashboardData = async () => {
+    const load = async () => {
       setLoading(true)
+      setError('')
       try {
-        setError('')
-
         const fetchJson = async (url: string) => {
           const res = await fetch(url)
           const data = await res.json()
-          if (!res.ok) throw new Error(data.error || `Failed to fetch ${url}`)
+          if (!res.ok) throw new Error(data.error || `Failed: ${url}`)
           return data
         }
 
@@ -92,233 +85,418 @@ export default function DashboardPage() {
         ])
 
         const announcements: AnyDoc[] = Array.isArray(announcementsRaw) ? announcementsRaw : []
-        const routes: AnyDoc[] = Array.isArray(routesRaw) ? routesRaw : []
+        const routesDocs: AnyDoc[] = Array.isArray(routesRaw) ? routesRaw : []
         const schedules: AnyDoc[] = Array.isArray(schedulesRaw) ? schedulesRaw : []
         const terminals: AnyDoc[] = Array.isArray(terminalsRaw) ? terminalsRaw : []
 
-        // ---- Recent Activity feed ----
-        const candidates: ActivityItem[] = []
-
-        for (const a of announcements) {
-          const tsMs = safeDateToMs(a.updatedAt ?? a.createdAt)
-          if (tsMs === null) continue
-
-          const title = String(a.title ?? 'Untitled')
-          const type = a.type ? ` (${String(a.type)})` : ''
-
-          candidates.push({
-            key: `ann-${String(a._id ?? title)}-${tsMs}`,
-            label: `Announcement: ${title}${type}`,
-            time: formatTimeAgo(tsMs),
-            tsMs,
-          })
-        }
-
-        for (const r of routes) {
-          const tsMs = safeDateToMs(r.updatedAt ?? r.createdAt)
-          if (tsMs === null) continue
-
-          const routeNumber = String(r.routeNumber ?? '—')
-
-          candidates.push({
-            key: `route-${String(r._id ?? routeNumber)}-${tsMs}`,
-            label: `Route updated: ${routeNumber}`,
-            time: formatTimeAgo(tsMs),
-            tsMs,
-          })
-        }
-
-        for (const s of schedules) {
-          const tsMs = safeDateToMs(s.updatedAt ?? s.createdAt)
-          if (tsMs === null) continue
-
-           const routeLabel = s.route?.routeNumber
-            ? `${s.route.routeNumber} · ${s.route.startPoint} → ${s.route.endPoint}`
-            : '—'
-          const dep = s.departureTime ? String(s.departureTime) : ''
-          const arr = s.arrivalTime ? String(s.arrivalTime) : ''
-          const when = dep && arr ? ` (${dep}→${arr})` : ''
-
-          candidates.push({
-            key: `schedule-${String(s._id ?? tsMs)}-${tsMs}`,
-            label: `Schedule updated: ${routeLabel}${when}`,
-            time: formatTimeAgo(tsMs),
-            tsMs,
-          })
-        }
-
-        for (const t of terminals) {
-          const tsMs = safeDateToMs(t.updatedAt ?? t.createdAt)
-          if (tsMs === null) continue
-
-          const name = String(t.name ?? 'Terminal')
-
-          candidates.push({
-            key: `terminal-${String(t._id ?? name)}-${tsMs}`,
-            label: `Terminal updated: ${name}`,
-            time: formatTimeAgo(tsMs),
-            tsMs,
-          })
-        }
-
-        candidates.sort((a, b) => b.tsMs - a.tsMs)
-        const recent = candidates.slice(0, 5)
-
-        // ---- Stats from real data ----
+        /* ── computed stats ── */
         const activeSchedules = schedules.filter((s) => s?.status === 'active')
         const activeRouteIds = new Set(
           activeSchedules.map((s) => String(s.routeId ?? '')).filter(Boolean),
         )
-
-        const allVehicleNumbers = new Set(schedules.map((s) => String(s.vehicleNumber ?? '')).filter(Boolean))
-        const activeVehicleNumbers = new Set(
+        const allVehicles = new Set(schedules.map((s) => String(s.vehicleNumber ?? '')).filter(Boolean))
+        const activeVehicles = new Set(
           activeSchedules.map((s) => String(s.vehicleNumber ?? '')).filter(Boolean),
         )
+        const scheduleRate = schedules.length ? (activeSchedules.length / schedules.length) * 100 : 0
+        const fleetUtil = allVehicles.size ? (activeVehicles.size / allVehicles.size) * 100 : 0
 
+        /* ── routes table ── */
+        const routeRows: RouteRow[] = routesDocs.map((r) => {
+          const rid = String(r._id ?? '')
+          const rowSchedules = schedules.filter((s) => String(s.routeId ?? '') === rid)
+          const rowActive = rowSchedules.filter((s) => s.status === 'active')
+          const vehicles = [...new Set(rowSchedules.map((s) => String(s.vehicleNumber ?? '')).filter(Boolean))]
+          return {
+            id: rid,
+            routeNumber: String(r.routeNumber ?? '—'),
+            startPoint: String(r.startPoint ?? '—'),
+            endPoint: String(r.endPoint ?? '—'),
+            activeSchedules: rowActive.length,
+            totalSchedules: rowSchedules.length,
+            vehicles,
+          }
+        })
 
-        const totalSchedules = schedules.length
-        const activeScheduleRate = totalSchedules ? (activeSchedules.length / totalSchedules) * 100 : 0
+        /* ── recent schedules (latest 5 by arrival time string) ── */
+        const recent5 = [...schedules]
+          .sort((a, b) => {
+            const ta = safeDateToMs(a.updatedAt ?? a.createdAt) ?? 0
+            const tb = safeDateToMs(b.updatedAt ?? b.createdAt) ?? 0
+            return tb - ta
+          })
+          .slice(0, 5)
 
-        const fleetUtilization = allVehicleNumbers.size
-          ? (activeVehicleNumbers.size / allVehicleNumbers.size) * 100
-          : 0
-
-        // Best-effort monthly revenue: sum `fare` on active routes if present.
-        const activeRoutes = routes.filter((r) => activeRouteIds.has(String(r._id ?? '')))
-        const fareNumbers = activeRoutes
-          .map((r) => r.fare)
-          .filter((v) => typeof v === 'number' && Number.isFinite(v)) as number[]
-
-        const monthlyRevenue = fareNumbers.length > 0 ? formatPHPCompact(fareNumbers.reduce((sum, v) => sum + v, 0)) : 'N/A'
+        /* ── activity feed ── */
+        const candidates: ActivityItem[] = []
+        for (const a of announcements) {
+          const tsMs = safeDateToMs(a.updatedAt ?? a.createdAt)
+          if (tsMs === null) continue
+          candidates.push({
+            key: `ann-${String(a._id ?? a.title)}-${tsMs}`,
+            label: `Announcement: ${String(a.title ?? 'Untitled')}`,
+            time: formatTimeAgo(tsMs),
+            tsMs,
+          })
+        }
+        for (const r of routesDocs) {
+          const tsMs = safeDateToMs(r.updatedAt ?? r.createdAt)
+          if (tsMs === null) continue
+          candidates.push({
+            key: `route-${String(r._id)}-${tsMs}`,
+            label: `Route updated: ${String(r.routeNumber ?? '—')}`,
+            time: formatTimeAgo(tsMs),
+            tsMs,
+          })
+        }
+        for (const s of schedules) {
+          const tsMs = safeDateToMs(s.updatedAt ?? s.createdAt)
+          if (tsMs === null) continue
+          const routeLabel = s.route?.routeNumber
+            ? `${s.route.routeNumber} · ${s.route.startPoint} → ${s.route.endPoint}`
+            : '—'
+          candidates.push({
+            key: `sched-${String(s._id)}-${tsMs}`,
+            label: `Schedule updated: ${routeLabel}`,
+            time: formatTimeAgo(tsMs),
+            tsMs,
+          })
+        }
+        for (const t of terminals) {
+          const tsMs = safeDateToMs(t.updatedAt ?? t.createdAt)
+          if (tsMs === null) continue
+          candidates.push({
+            key: `terminal-${String(t._id)}-${tsMs}`,
+            label: `Terminal updated: ${String(t.name ?? 'Terminal')}`,
+            time: formatTimeAgo(tsMs),
+            tsMs,
+          })
+        }
+        candidates.sort((a, b) => b.tsMs - a.tsMs)
 
         if (!cancelled) {
-          setStatsValues({
+          setStats({
             activeRoutes: String(activeRouteIds.size),
-            totalVehicles: String(allVehicleNumbers.size),
+            totalVehicles: String(allVehicles.size),
             terminals: String(terminals.length),
-            monthlyRevenue,
+            totalSchedules: String(schedules.length),
           })
-          setQuickStatsValues({
-            activeScheduleRate: `${ activeScheduleRate.toFixed(1)}%`,
-            fleetUtilization: `${fleetUtilization.toFixed(1)}%`,
-            avgPassengersPerBus: '—',
-          })
-
-          setActivity(recent)
+          setRates({ scheduleRate, fleetUtil })
+          setRoutes(routeRows)
+          setRecentSchedules(recent5)
+          setActivity(candidates.slice(0, 6))
         }
       } catch (e) {
-        // Keep dashboard usable if one request fails.
-        if (!cancelled) {
-          setActivity([])
-          setError(e instanceof Error ? e.message : 'Failed to load dashboard data')
-        }
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load dashboard')
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
 
-    fetchDashboardData()
-
-    return () => {
-      cancelled = true
-    }
+    load()
+    return () => { cancelled = true }
   }, [])
 
+  /* ── stat card definitions ── */
+  const statCards = [
+    {
+      key: 'activeRoutes',
+      label: 'Active Routes',
+      icon: MapPin,
+      accent: 'text-blue-400',
+      bg: 'bg-blue-500/10',
+      border: 'border-blue-500/20',
+      href: '/dashboard/routes',
+    },
+    {
+      key: 'totalVehicles',
+      label: 'Total Vehicles',
+      icon: Bus,
+      accent: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      href: '/dashboard/schedules',
+    },
+    {
+      key: 'terminals',
+      label: 'Terminals',
+      icon: Building2,
+      accent: 'text-violet-400',
+      bg: 'bg-violet-500/10',
+      border: 'border-violet-500/20',
+      href: '/dashboard/terminals',
+    },
+    {
+      key: 'totalSchedules',
+      label: 'Total Schedules',
+      icon: Clock,
+      accent: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/20',
+      href: '/dashboard/schedules',
+    },
+  ]
+
   return (
-    <div>
-      {/* Heading */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-1">Welcome back</h1>
-        <p className="text-sm font-light text-slate-500">Here&apos;s an overview of your bus operations.</p>
+    <div className="space-y-8">
+
+      {/* ── Heading ── */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-100">Overview</h1>
+        <p className="text-sm text-slate-500 mt-1">Here&apos;s a live summary of your bus operations.</p>
       </div>
-      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
+
+      {error && (
+        <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <p className="text-sm text-red-400">{error}</p>
+        </div>
+      )}
 
       {/* ── STAT CARDS ── */}
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        {statMeta.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl px-5 py-5 flex items-center justify-between hover:border-white/12 transition"
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {statCards.map((s) => (
+          <Link
+            key={s.key}
+            href={s.href}
+            className="group bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl px-5 py-5 flex items-start justify-between hover:border-white/15 hover:bg-slate-900/80 transition"
           >
-            <div>
-              <p className="text-xs text-slate-500 mb-1.5 uppercase tracking-wider font-medium">{stat.label}</p>
+            <div className="min-w-0">
+              <p className="text-xs text-slate-500 uppercase tracking-wider font-medium mb-2">{s.label}</p>
               {loading ? (
-                <div className="h-9 w-24 bg-white/5 rounded animate-pulse" />
+                <Skeleton className="h-9 w-20" />
               ) : (
-                <p className="text-3xl font-bold text-slate-100 tracking-tight">{(statsValues as any)[stat.key]}</p>
+                <p className="text-3xl font-bold text-slate-100 tracking-tight">
+                  {(stats as any)[s.key]}
+                </p>
               )}
             </div>
-            <div
-              className={`w-11 h-11 rounded-xl ${stat.bg} border ${stat.border} flex items-center justify-center shrink-0`}
-            >
-              <stat.icon className={`w-5 h-5 ${stat.accent}`} />
+            <div className={`w-10 h-10 rounded-xl ${s.bg} border ${s.border} flex items-center justify-center shrink-0 ml-3`}>
+              <s.icon className={`w-4.5 h-4.5 ${s.accent}`} />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
-      {/* ── BOTTOM ROW ── */}
+      {/* ── MIDDLE ROW: Fleet Health + Recent Schedules ── */}
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Recent Activity */}
+
+        {/* Fleet Health */}
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-100 mb-4">Recent Activity</h3>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-400" />
+              <h2 className="text-sm font-semibold text-slate-100">Fleet Health</h2>
+            </div>
+            <span className="text-xs text-slate-600 font-mono">live</span>
+          </div>
 
           {loading ? (
-            <div className="space-y-1">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/60 shrink-0" />
-                    <div className="h-4 w-56 bg-white/5 rounded animate-pulse" />
-                  </div>
-                  <div className="h-3 w-20 bg-white/5 rounded animate-pulse" />
-                </div>
-              ))}
+            <div className="space-y-5">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
             </div>
-          ) : activity.length === 0 ? (
-            <div className="text-sm text-slate-500 py-2">No activity yet.</div>
           ) : (
-            <div className="space-y-1">
-              {activity.map((item, i) => (
-                <div
-                  key={item.key}
-                  className={`flex items-center justify-between py-2.5 ${
-                    i < activity.length - 1 ? 'border-b border-white/5' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/60 shrink-0" />
-                    <p className="text-sm text-slate-300">{item.label}</p>
-                  </div>
-                  <p className="text-xs text-slate-600 shrink-0 ml-4">{item.time}</p>
+            <div className="space-y-5">
+              <StatBadge pct={rates.scheduleRate} label="Active Schedule Rate" />
+              <StatBadge pct={rates.fleetUtil} label="Fleet Utilization" />
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="bg-white/3 border border-white/5 rounded-lg px-3 py-3">
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Active Schedules</p>
+                  <p className="text-xl font-bold text-emerald-400">
+                    {loading ? '—' : Math.round((rates.scheduleRate / 100) * parseInt(stats.totalSchedules || '0'))}
+                  </p>
                 </div>
-              ))}
+                <div className="bg-white/3 border border-white/5 rounded-lg px-3 py-3">
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Idle Vehicles</p>
+                  <p className="text-xl font-bold text-amber-400">
+                    {loading ? '—' : Math.max(0, parseInt(stats.totalVehicles || '0') - Math.round((rates.fleetUtil / 100) * parseInt(stats.totalVehicles || '0')))}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Quick Stats */}
+        {/* Recent Schedules */}
         <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-100 mb-4">Quick Stats</h3>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-violet-400" />
+              <h2 className="text-sm font-semibold text-slate-100">Recent Schedules</h2>
+            </div>
+            <Link
+              href="/dashboard/schedules"
+              className="text-xs text-slate-500 hover:text-blue-400 flex items-center gap-1 transition"
+            >
+              View all <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-11 w-full" />)}
+            </div>
+          ) : recentSchedules.length === 0 ? (
+            <p className="text-sm text-slate-500">No schedules yet.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {recentSchedules.map((s, i) => {
+                const routeLabel = s.route?.routeNumber ?? s.routeNumber ?? '—'
+                const dep = s.departureTime ? to12Hour(String(s.departureTime)) : '—'
+                const arr = s.arrivalTime ? to12Hour(String(s.arrivalTime)) : '—'
+                const active = s.status === 'active'
+                return (
+                  <div
+                    key={String(s._id ?? i)}
+                    className="flex items-center justify-between bg-white/3 border border-white/5 rounded-lg px-3 py-2.5 gap-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-slate-200 truncate">Route {routeLabel}</p>
+                      <p className="text-[11px] text-slate-500">{dep} → {arr}</p>
+                    </div>
+                    <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                      active
+                        ? 'bg-emerald-500/15 text-emerald-400'
+                        : 'bg-slate-700/60 text-slate-500'
+                    }`}>
+                      {active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── ROUTES TABLE ── */}
+      <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-blue-400" />
+            <h2 className="text-sm font-semibold text-slate-100">Routes Status</h2>
+          </div>
+          <Link
+            href="/dashboard/routes"
+            className="text-xs text-slate-500 hover:text-blue-400 flex items-center gap-1 transition"
+          >
+            Manage routes <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/5">
+                <th className="text-left text-[11px] font-medium text-slate-500 uppercase tracking-wider px-5 py-3">Route</th>
+                <th className="text-left text-[11px] font-medium text-slate-500 uppercase tracking-wider px-4 py-3 hidden sm:table-cell">From → To</th>
+                <th className="text-left text-[11px] font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Schedules</th>
+                <th className="text-left text-[11px] font-medium text-slate-500 uppercase tracking-wider px-4 py-3 hidden md:table-cell">Vehicles</th>
+                <th className="text-left text-[11px] font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                [...Array(4)].map((_, i) => (
+                  <tr key={i} className="border-b border-white/5 last:border-0">
+                    <td className="px-5 py-3"><Skeleton className="h-4 w-16" /></td>
+                    <td className="px-4 py-3 hidden sm:table-cell"><Skeleton className="h-4 w-40" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
+                    <td className="px-4 py-3 hidden md:table-cell"><Skeleton className="h-4 w-24" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                  </tr>
+                ))
+              ) : routes.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-sm text-slate-500">
+                    No routes found.{' '}
+                    <Link href="/dashboard/routes" className="text-blue-400 hover:underline">Add your first route</Link>
+                  </td>
+                </tr>
+              ) : (
+                routes.map((r) => {
+                  const hasActive = r.activeSchedules > 0
+                  return (
+                    <tr key={r.id} className="border-b border-white/5 last:border-0 hover:bg-white/2 transition">
+                      <td className="px-5 py-3">
+                        <span className="font-mono text-sm font-semibold text-slate-200">{r.routeNumber}</span>
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <span className="text-sm text-slate-400">{r.startPoint} → {r.endPoint}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          {hasActive
+                            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            : <XCircle className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                          }
+                          <span className="text-sm text-slate-400">{r.activeSchedules}/{r.totalSchedules}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <span className="text-sm text-slate-500">
+                          {r.vehicles.length > 0 ? r.vehicles.slice(0, 2).join(', ') + (r.vehicles.length > 2 ? ` +${r.vehicles.length - 2}` : '') : '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                          hasActive
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : 'bg-slate-700/60 text-slate-500'
+                        }`}>
+                          {hasActive ? 'Active' : 'No schedule'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── RECENT ACTIVITY ── */}
+      <div className="bg-slate-900/60 backdrop-blur-sm border border-white/8 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-5">
+          <Activity className="w-4 h-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-100">Recent Activity</h2>
+        </div>
+
+        {loading ? (
           <div className="space-y-1">
-            {quickMeta.map((item, i) => (
-              <div
-                key={item.key}
-                className={`flex items-center justify-between py-2.5 ${
-                  i < quickMeta.length - 1 ? 'border-b border-white/5' : ''
-                }`}
-              >
-                <p className="text-sm text-slate-500">{item.label}</p>
-                {loading ? (
-                  <div className="h-4 w-24 bg-white/5 rounded animate-pulse" />
-                ) : (
-                  <p className={`text-sm font-bold ${item.accent}`}>{(quickStatsValues as any)[item.key]}</p>
-                )}
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40 shrink-0" />
+                  <Skeleton className="h-4 w-56" />
+                </div>
+                <Skeleton className="h-3 w-20" />
               </div>
             ))}
           </div>
-        </div>
+        ) : activity.length === 0 ? (
+          <p className="text-sm text-slate-500">No activity yet.</p>
+        ) : (
+          <div className="space-y-0.5">
+            {activity.map((item, i) => (
+              <div
+                key={item.key}
+                className={`flex items-center justify-between py-2.5 ${i < activity.length - 1 ? 'border-b border-white/5' : ''}`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/60 shrink-0" />
+                  <p className="text-sm text-slate-300 truncate">{item.label}</p>
+                </div>
+                <p className="text-xs text-slate-600 shrink-0 ml-4">{item.time}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
     </div>
   )
 }
