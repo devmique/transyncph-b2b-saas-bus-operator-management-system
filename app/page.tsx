@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { MapPin, Clock, TrendingUp, Users, Zap, CheckCircle2, Bus, Menu, X } from 'lucide-react'
+import DemoModal from '@/components/demo-modal'
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [demoOpen, setDemoOpen] = useState(false)
 
   return (
     <main className="min-h-screen text-slate-100">
@@ -132,7 +134,10 @@ export default function Home() {
                     <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
                   </svg>
                 </Link>
-                <button className="h-11 px-6 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition">
+                <button
+                  onClick={() => setDemoOpen(true)}
+                  className="h-11 px-6 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-medium rounded-lg transition cursor-pointer"
+                >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
                   </svg>
@@ -372,6 +377,9 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* ── DEMO MODAL ── */}
+      <DemoModal isOpen={demoOpen} onClose={() => setDemoOpen(false)} />
     </main>
   )
 }
